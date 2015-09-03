@@ -1,4 +1,4 @@
-#include <wobble/tests.h>
+#include "tests.h"
 #include <signal.h>
 #include <cstdlib>
 #include <cstring>

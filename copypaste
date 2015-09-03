@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+# coding: utf-8
+
+import argparse
+import os
+
+def generate(srcdir, destdir, args):
+    """
+    Copy the wobble sources to destdir, applying the transformations defined in
+    args
+    """
+    if args.namespace:
+        dest_namespace = args.namespace.encode("utf-8")
+        dest_const = args.namespace.upper().replace("::", "-").encode("utf-8")
+
+    for root, dirnames, filenames in os.walk(srcdir):
+        if args.subdir:
+            destpath = os.path.join(destdir, args.subdir, os.path.relpath(root, srcdir))
+        else:
+            destpath = os.path.join(destdir, os.path.relpath(root, srcdir))
+
+        for fn in filenames:
+            if fn.endswith("-tut.cc"): continue
+            if not fn.endswith(".h") and not fn.endswith(".cc"): continue
+            os.makedirs(destpath, exist_ok=True)
+
+            with open(os.path.join(root, fn), "rb") as fd:
+                buf = fd.read()
+
+            # Replace namespace and const names
+            if args.namespace:
+                buf = buf.replace(b"wobble", dest_namespace)
+                buf = buf.replace(b"wobble".upper(), dest_const)
+
+            with open(os.path.join(destpath, fn), "wb") as fd:
+                fd.write(buf)
+
+def main():
+    parser = argparse.ArgumentParser(description="Create a copy of wobble for inclusion into a different project.")
+    parser.add_argument("--namespace", action="store", help="namespace to use in the destination code")
+    parser.add_argument("--subdir", action="store", help="subdirectory for the code in the target project")
+    parser.add_argument("destdir", action="store", help="destination directory")
+
+    args = parser.parse_args()
+    generate("wobble", args.destdir, args)
+
+if __name__ == "__main__":
+    main()

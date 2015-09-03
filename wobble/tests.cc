@@ -6,8 +6,8 @@
  * Copyright (C) 2003--2015  Enrico Zini <enrico@debian.org>
  */
 
-#include <wobble/tests.h>
-#include <wobble/string.h>
+#include "tests.h"
+#include "string.h"
 #include <fnmatch.h>
 //#include <wobble/regexp.h>
 //#include <wobble/sys/fs.h>

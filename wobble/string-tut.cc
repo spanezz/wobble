@@ -1,5 +1,5 @@
-#include <wobble/tests.h>
-#include <wobble/string.h>
+#include "tests.h"
+#include "string.h"
 
 using namespace std;
 using namespace wobble;

@@ -1,4 +1,4 @@
-#include <wobble/tests.h>
+#include "tests.h"
 
 using namespace std;
 using namespace wobble;
