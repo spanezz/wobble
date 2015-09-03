@@ -20,7 +20,7 @@ def generate(srcdir, destdir, args):
             destpath = os.path.join(destdir, os.path.relpath(root, srcdir))
 
         for fn in filenames:
-            if fn.endswith("-tut.cc"): continue
+            if fn.endswith("-test.cc"): continue
             if not fn.endswith(".h") and not fn.endswith(".cc"): continue
             os.makedirs(destpath, exist_ok=True)
 
