@@ -84,14 +84,14 @@ int main(int argc,const char* argv[])
 
   for (const auto& tc_res: all_results)
   {
-      if (!tc_res.fail_init.empty())
+      if (!tc_res.fail_setup.empty())
       {
-          fprintf(stderr, "%s: %s\n", tc_res.test_case.c_str(), tc_res.fail_init.c_str());
+          fprintf(stderr, "%s: %s\n", tc_res.test_case.c_str(), tc_res.fail_setup.c_str());
           ++test_cases_failed;
       } else {
-          if (!tc_res.fail_shutdown.empty())
+          if (!tc_res.fail_teardown.empty())
           {
-              fprintf(stderr, "%s: %s\n", tc_res.test_case.c_str(), tc_res.fail_shutdown.c_str());
+              fprintf(stderr, "%s: %s\n", tc_res.test_case.c_str(), tc_res.fail_teardown.c_str());
               ++test_cases_failed;
           }
           else

@@ -15,45 +15,49 @@
 using namespace std;
 using namespace wobble;
 
-const wobble::tests::Location wobble_test_location;
 const wobble::tests::LocationInfo wobble_test_location_info;
 
 namespace wobble {
 namespace tests {
 
-Location::Location()
-    : parent(0), info(0), file(0), line(0), args(0)
-{
-    // Build a special, root location
-}
+/*
+ * TestStackFrame
+ */
 
-Location::Location(const Location* parent, const wobble::tests::LocationInfo& info, const char* file, int line, const char* args)
-    : parent(parent), info(&info), file(file), line(line), args(args)
+void TestStackFrame::format(std::ostream& out) const
 {
-}
-
-Location Location::nest(const wobble::tests::LocationInfo& info, const char* file, int line, const char* args) const
-{
-    return Location(this, info, file, line, args);
-}
-
-void Location::backtrace(std::ostream& out) const
-{
-    if (parent) parent->backtrace(out);
-    if (!file) return; // Root node, nothing to print
-    out << file << ":" << line << ":" << args;
-    if (!info->str().empty())
-        out << " [" << info->str() << "]";
+    out << file << ":" << line << ":" << call;
+    if (!local_info.empty())
+        out << " [" << local_info << "]";
     out << endl;
 }
 
-std::string Location::backtrace() const
+
+/*
+ * TestFailed
+ */
+
+TestFailed::TestFailed(const std::exception& e)
+    : message(typeid(e).name())
+{
+   message += ": ";
+   message += e.what();
+}
+
+void TestFailed::backtrace(std::ostream& out) const
+{
+    for (const auto& frame: stack)
+        frame.format(out);
+}
+
+std::string TestFailed::backtrace() const
 {
     std::stringstream ss;
     backtrace(ss);
     return ss.str();
 }
 
+#if 0
 std::string Location::fail_msg(const std::string& error) const
 {
     std::stringstream ss;
@@ -83,6 +87,7 @@ void Location::fail_test(std::function<void(std::ostream&)> write_error) const
 {
     throw TestFailed(this->fail_msg(write_error));
 }
+#endif
 
 std::ostream& LocationInfo::operator()()
 {
@@ -91,199 +96,164 @@ std::ostream& LocationInfo::operator()()
     return *this;
 }
 
-test_function ActualCString::operator==(const char* expected) const
+/*
+ * Assertions
+ */
+
+void assert_startswith(const std::string& actual, const std::string& expected)
+{
+    if (str::startswith(actual, expected)) return;
+    std::stringstream ss;
+    ss << "'" << actual << "' does not start with '" << expected << "'";
+    throw TestFailed(ss.str());
+}
+
+void assert_endswith(const std::string& actual, const std::string& expected)
+{
+    if (str::endswith(actual, expected)) return;
+    std::stringstream ss;
+    ss << "'" << actual << "' does not end with '" << expected << "'";
+    throw TestFailed(ss.str());
+}
+
+void assert_contains(const std::string& actual, const std::string& expected)
+{
+    if (actual.find(expected) != std::string::npos) return;
+    std::stringstream ss;
+    ss << "'" << actual << "' does not contain '" << expected << "'";
+    throw TestFailed(ss.str());
+}
+
+void assert_not_contains(const std::string& actual, const std::string& expected)
+{
+    if (actual.find(expected) == std::string::npos) return;
+    std::stringstream ss;
+    ss << "'" << actual << "' contains '" << expected << "'";
+    throw TestFailed(ss.str());
+}
+
+void assert_true(std::nullptr_t actual)
+{
+    throw TestFailed("actual value nullptr is not true");
+};
+
+void assert_false(std::nullptr_t actual)
+{
+};
+
+
+static void _actual_must_be_set(const char* actual)
+{
+    if (!actual)
+        throw TestFailed("actual value is the null pointer instead of a valid string");
+}
+
+void ActualCString::operator==(const char* expected) const
 {
     if (expected && actual)
-        return TestEquals<std::string, std::string>(actual, expected);
+        assert_equal<std::string, std::string>(actual, expected);
     else if (!expected && !actual)
-        return [](WOBBLE_TEST_LOCPRM) {};
+        ;
     else if (expected)
-        return [&](WOBBLE_TEST_LOCPRM) {
-            wobble_test_location.fail_test([&](std::ostream& out) {
-                out << "actual value is nullptr instead of the expected string \"" << str::encode_cstring(expected) << "\"";
-            });
-        };
+    {
+        std::stringstream ss;
+        ss << "actual value is nullptr instead of the expected string \"" << str::encode_cstring(expected) << "\"";
+        throw TestFailed(ss.str());
+    }
     else
-        return [&](WOBBLE_TEST_LOCPRM) {
-            wobble_test_location.fail_test([&](std::ostream& out) {
-                out << "actual value is the string \"" << str::encode_cstring(actual) << "\" instead of nullptr";
-            });
-        };
+    {
+        std::stringstream ss;
+        ss << "actual value is the string \"" << str::encode_cstring(actual) << "\" instead of nullptr";
+        throw TestFailed(ss.str());
+    }
 }
 
-test_function ActualCString::operator==(const std::string& expected) const
+void ActualCString::operator==(const std::string& expected) const
 {
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestEquals<std::string, std::string>(actual, expected);
+    _actual_must_be_set(actual);
+    assert_equal<std::string, std::string>(actual, expected);
 }
 
-test_function ActualCString::operator!=(const char* expected) const
+void ActualCString::operator!=(const char* expected) const
 {
     if (expected && actual)
-        return TestDiffers<std::string, std::string>(actual, expected);
+        assert_not_equal<std::string, std::string>(actual, expected);
     else if (!expected && !actual)
-        return [](WOBBLE_TEST_LOCPRM) {
-            wobble_test_location.fail_test("actual and expected values are both nullptr but they should be different");
-        };
+        throw TestFailed("actual and expected values are both nullptr but they should be different");
 }
 
-test_function ActualCString::operator!=(const std::string& expected) const
+void ActualCString::operator!=(const std::string& expected) const
 {
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestDiffers<std::string, std::string>(actual, expected);
+    _actual_must_be_set(actual);
+    assert_not_equal<std::string, std::string>(actual, expected);
 }
 
-test_function ActualCString::_actual_must_be_set() const
+void ActualCString::operator<(const std::string& expected) const
 {
-    if (actual) return nullptr;
-    return [](WOBBLE_TEST_LOCPRM) {
-        wobble_test_location.fail_test("actual value is the null pointer instead of a valid string");
-    };
+    _actual_must_be_set(actual);
+    assert_less<std::string, std::string>(actual, expected);
 }
 
-test_function ActualCString::operator<(const std::string& expected) const
+void ActualCString::operator<=(const std::string& expected) const
 {
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestLt<std::string, std::string>(actual, expected);
+    _actual_must_be_set(actual);
+    assert_less_equal<std::string, std::string>(actual, expected);
 }
 
-test_function ActualCString::operator<=(const std::string& expected) const
+void ActualCString::operator>(const std::string& expected) const
 {
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestLte<std::string, std::string>(actual, expected);
+    _actual_must_be_set(actual);
+    assert_greater<std::string, std::string>(actual, expected);
 }
 
-test_function ActualCString::operator>(const std::string& expected) const
+void ActualCString::operator>=(const std::string& expected) const
 {
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestGt<std::string, std::string>(actual, expected);
+    _actual_must_be_set(actual);
+    assert_greater_equal<std::string, std::string>(actual, expected);
 }
 
-test_function ActualCString::operator>=(const std::string& expected) const
+void ActualCString::startswith(const std::string& expected) const
 {
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestGte<std::string, std::string>(actual, expected);
+    _actual_must_be_set(actual);
+    assert_startswith(actual, expected);
 }
 
-namespace {
-struct TestStartsWith
+void ActualCString::endswith(const std::string& expected) const
 {
-    std::string actual;
-    std::string expected;
-    TestStartsWith(const std::string& actual, const std::string& expected) : actual(actual), expected(expected) {}
-    void operator()(WOBBLE_TEST_LOCPRM) const
-    {
-        if (str::startswith(actual, expected)) return;
-        std::stringstream ss;
-        ss << "'" << actual << "' does not start with '" << expected << "'";
-        wobble_test_location.fail_test(ss.str());
-    }
-};
+    _actual_must_be_set(actual);
+    assert_endswith(actual, expected);
 }
 
-test_function ActualCString::startswith(const std::string& expected) const
+void ActualCString::contains(const std::string& expected) const
 {
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestStartsWith(actual, expected);
+    _actual_must_be_set(actual);
+    assert_contains(actual, expected);
 }
 
-test_function ActualStdString::startswith(const std::string& expected) const
+void ActualCString::not_contains(const std::string& expected) const
 {
-    return TestStartsWith(actual, expected);
+    _actual_must_be_set(actual);
+    assert_not_contains(actual, expected);
 }
 
-namespace {
-struct TestEndsWith
+void ActualStdString::startswith(const std::string& expected) const
 {
-    std::string actual;
-    std::string expected;
-    TestEndsWith(const std::string& actual, const std::string& expected) : actual(actual), expected(expected) {}
-    void operator()(WOBBLE_TEST_LOCPRM) const
-    {
-        if (str::endswith(actual, expected)) return;
-        std::stringstream ss;
-        ss << "'" << actual << "' does not end with '" << expected << "'";
-        wobble_test_location.fail_test(ss.str());
-    }
-};
+    assert_startswith(actual, expected);
 }
 
-test_function ActualCString::endswith(const std::string& expected) const
+void ActualStdString::endswith(const std::string& expected) const
 {
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestEndsWith(actual, expected);
+    assert_endswith(actual, expected);
 }
 
-test_function ActualStdString::endswith(const std::string& expected) const
+void ActualStdString::contains(const std::string& expected) const
 {
-    return TestEndsWith(actual, expected);
+    assert_contains(actual, expected);
 }
 
-namespace {
-struct TestContains
+void ActualStdString::not_contains(const std::string& expected) const
 {
-    std::string actual;
-    std::string expected;
-    TestContains(const std::string& actual, const std::string& expected) : actual(actual), expected(expected) {}
-
-    void operator()(WOBBLE_TEST_LOCPRM) const
-    {
-        if (actual.find(expected) != std::string::npos) return;
-        std::stringstream ss;
-        ss << "'" << actual << "' does not contain '" << expected << "'";
-        wobble_test_location.fail_test(ss.str());
-    }
-};
-}
-
-test_function ActualCString::contains(const std::string& expected) const
-{
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestContains(actual, expected);
-}
-
-test_function ActualStdString::contains(const std::string& expected) const
-{
-    return TestContains(actual, expected);
-}
-
-
-namespace {
-struct TestNotContains
-{
-    std::string actual;
-    std::string expected;
-    TestNotContains(const std::string& actual, const std::string& expected) : actual(actual), expected(expected) {}
-
-    void operator()(WOBBLE_TEST_LOCPRM) const
-    {
-        if (actual.find(expected) == std::string::npos) return;
-        std::stringstream ss;
-        ss << "'" << actual << "' contains '" << expected << "'";
-        wobble_test_location.fail_test(ss.str());
-    }
-};
-}
-
-test_function ActualCString::not_contains(const std::string& expected) const
-{
-    if (auto res = _actual_must_be_set())
-        return res;
-    return TestNotContains(actual, expected);
-}
-
-test_function ActualStdString::not_contains(const std::string& expected) const
-{
-    return TestNotContains(actual, expected);
+    assert_not_contains(actual, expected);
 }
 
 #if 0
@@ -414,9 +384,9 @@ TestCaseResult TestCase::run_tests(TestController& controller)
     }
 
     try {
-        init();
+        setup();
     } catch (std::exception& e) {
-        res.set_init_failed(e);
+        res.set_setup_failed(e);
         controller.test_case_end(res);
         return res;
     }
@@ -428,16 +398,16 @@ TestCaseResult TestCase::run_tests(TestController& controller)
     }
 
     try {
-        shutdown();
+        teardown();
     } catch (std::exception& e) {
-        res.set_shutdown_failed(e);
+        res.set_teardown_failed(e);
     }
 
     controller.test_case_end(res);
     return res;
 }
 
-TestMethodResult TestCase::run_test(TestController& controller, Method& method)
+TestMethodResult TestCase::run_test(TestController& controller, TestMethod& method)
 {
     TestMethodResult res(name, method.name);
 
@@ -448,23 +418,34 @@ TestMethodResult TestCase::run_test(TestController& controller, Method& method)
         return res;
     }
 
+    bool run = true;
     try {
-        method.test_function();
-    } catch (TestFailed& e) {
-        // Location::fail_test() was called
-        res.set_failed(e);
-        controller.test_method_end(res);
-        return res;
+        method_setup(res);
     } catch (std::exception& e) {
-        // std::exception was thrown
-        res.set_exception(e);
-        controller.test_method_end(res);
-        return res;
-    } catch (...) {
-        // An unknown exception was thrown
-        res.set_unknown_exception();
-        controller.test_method_end(res);
-        return res;
+        res.set_setup_exception(e);
+        run = false;
+    }
+
+    if (run)
+    {
+        try {
+            method.test_function();
+        } catch (TestFailed& e) {
+            // Location::fail_test() was called
+            res.set_failed(e);
+        } catch (std::exception& e) {
+            // std::exception was thrown
+            res.set_exception(e);
+        } catch (...) {
+            // An unknown exception was thrown
+            res.set_unknown_exception();
+        }
+    }
+
+    try {
+        method_teardown(res);
+    } catch (std::exception& e) {
+        res.set_teardown_exception(e);
     }
 
     controller.test_method_end(res);
