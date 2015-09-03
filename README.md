@@ -1,4 +1,4 @@
- * wobble utility code repository
+# wobble utility code repository
 
 wobble is a repository of utility code to be included in other sources.
 
@@ -20,10 +20,12 @@ to wobble, with unit tests.
 
 To run wobble's unit tests:
 
-   mkdir build
-   cd build
-   # You can use "ccmake .." instead of "cmake .." to get an interactive
-   # interface for selecting configuration parameters.
-   cmake ..
-   make
-   make check
+```shell
+mkdir build
+cd build
+# You can use "ccmake .." instead of "cmake .." to get an interactive
+# interface for selecting configuration parameters.
+cmake ..
+make
+make check
+```
