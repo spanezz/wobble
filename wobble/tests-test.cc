@@ -17,7 +17,7 @@ class Tests : public TestCase
             wassert(actual(false).isfalse());
         });
 
-        add_method("numbers", []() {
+        add_method("int", []() {
             wassert(actual(1).istrue());
             wassert(actual(0).isfalse());
             wassert(actual(1) == 1);
@@ -28,6 +28,20 @@ class Tests : public TestCase
             wassert(actual(1) > 0);
             wassert(actual(1) >= 1);
             wassert(actual(1) >= 0);
+        });
+
+        add_method("double", []() {
+            wassert(actual(1.0).istrue());
+            wassert(actual(0.0).isfalse());
+            wassert(actual(1.0) == 1);
+            wassert(actual(1.0) != 2);
+            wassert(actual(1.0) < 2);
+            wassert(actual(1.0) <= 1);
+            wassert(actual(1.0) <= 2);
+            wassert(actual(1.0) > 0);
+            wassert(actual(1.0) >= 1);
+            wassert(actual(1.0) >= 0);
+            wassert(actual(1.0001).almost_equal(1.0002, 3));
         });
 
         add_method("pointers", []() {

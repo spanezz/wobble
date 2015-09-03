@@ -9,6 +9,8 @@
 #include "tests.h"
 #include "string.h"
 #include <fnmatch.h>
+#include <cmath>
+#include <iomanip>
 //#include <wobble/regexp.h>
 //#include <wobble/sys/fs.h>
 
@@ -254,6 +256,24 @@ void ActualStdString::contains(const std::string& expected) const
 void ActualStdString::not_contains(const std::string& expected) const
 {
     assert_not_contains(actual, expected);
+}
+
+void ActualDouble::almost_equal(double expected, unsigned places) const
+{
+    if (round((actual - expected) * exp10(places)) == 0.0)
+        return;
+    std::stringstream ss;
+    ss << std::setprecision(places) << fixed << actual << " is different than the expected " << expected;
+    throw TestFailed(ss.str());
+}
+
+void ActualDouble::not_almost_equal(double expected, unsigned places) const
+{
+    if (round(actual - expected * exp10(places)) != 0.0)
+        return;
+    std::stringstream ss;
+    ss << std::setprecision(places) << fixed << actual << " is the same as the expected " << expected;
+    throw TestFailed(ss.str());
 }
 
 #if 0

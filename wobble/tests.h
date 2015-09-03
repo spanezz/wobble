@@ -312,11 +312,20 @@ struct ActualStdString : public Actual<std::string>
 //    TestFileExists fileexists() const { return TestFileExists(actual); }
 };
 
+struct ActualDouble : public Actual<double>
+{
+    using Actual::Actual;
+
+    void almost_equal(double expected, unsigned places) const;
+    void not_almost_equal(double expected, unsigned places) const;
+};
+
 template<typename A>
 inline Actual<A> actual(const A& actual) { return Actual<A>(actual); }
 inline ActualCString actual(const char* actual) { return ActualCString(actual); }
 inline ActualCString actual(char* actual) { return ActualCString(actual); }
 inline ActualStdString actual(const std::string& actual) { return ActualStdString(actual); }
+inline ActualDouble actual(double actual) { return ActualDouble(actual); }
 
 
 /**
