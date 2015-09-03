@@ -115,14 +115,22 @@ int main(int argc,const char* argv[])
       }
   }
 
+  bool success = true;
+
   if (test_cases_failed)
+  {
+      success = false;
       fprintf(stderr, "%u/%u test cases had issues initializing or cleaning up\n",
               test_cases_failed, test_cases_ok + test_cases_failed);
+  }
 
   if (methods_failed)
+  {
+      success = false;
       fprintf(stderr, "%u/%u tests failed\n", methods_failed, methods_ok + methods_failed);
+  }
   else
       fprintf(stderr, "%u tests succeeded\n", methods_ok);
 
-  return 0;
+  return success ? 0 : 1;
 }
