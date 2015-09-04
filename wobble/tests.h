@@ -122,28 +122,6 @@ struct TestFailed : public std::exception
     void backtrace(std::ostream& out) const;
 };
 
-#if 0
-#define WOBBLE_TESTS_ALWAYS_THROWS __attribute__ ((noreturn))
-
-    /**
-     * Return a message describing a test failure, including the current
-     * backtrace
-     */
-    std::string fail_msg(const std::string& error) const;
-
-    /**
-     * Return a message describing a test failure, including the current
-     * backtrace
-     */
-    std::string fail_msg(std::function<void(std::ostream&)> write_error) const;
-
-    /// Raise TestFailed for the given error message
-    void fail_test(const std::string& error) const WOBBLE_TESTS_ALWAYS_THROWS;
-
-    /// Raise TestFailed with error message written by the given function
-    void fail_test(std::function<void(std::ostream&)> write_error) const WOBBLE_TESTS_ALWAYS_THROWS;
-#endif
-
 /**
  * Use this to declare a local variable with the given name that will be
  * picked up by tests as extra local info
@@ -740,12 +718,12 @@ struct FixtureTestCase : public TestCase
     void method_setup(TestMethodResult& mr) override
     {
         TestCase::method_setup(mr);
-        if (fixture) fixture.test_setup();
+        if (fixture) fixture->test_setup();
     }
 
     void method_teardown(TestMethodResult& mr) override
     {
-        if (fixture) fixture.test_teardown();
+        if (fixture) fixture->test_teardown();
         TestCase::method_teardown(mr);
     }
 

@@ -108,5 +108,23 @@ class Tests : public TestCase
     }
 } tests("tests");
 
+
+struct Fixture : public wobble::tests::Fixture
+{
+    int val = 0;
+};
+
+struct TestFixture : public FixtureTestCase<Fixture>
+{
+    using FixtureTestCase::FixtureTestCase;
+
+    void register_tests() override
+    {
+        add_method("fixture", [](Fixture& f) {
+            wassert(actual(f.val) == 0);
+        });
+    }
+} tests1("tests_fixture");
+
 }
 

@@ -79,16 +79,6 @@ std::string Location::fail_msg(std::function<void(std::ostream&)> write_error) c
     ss << endl;
     return ss.str();
 }
-
-void Location::fail_test(const std::string& error) const
-{
-    throw TestFailed(this->fail_msg(error));
-}
-
-void Location::fail_test(std::function<void(std::ostream&)> write_error) const
-{
-    throw TestFailed(this->fail_msg(write_error));
-}
 #endif
 
 std::ostream& LocationInfo::operator()()
