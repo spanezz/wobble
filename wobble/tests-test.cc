@@ -109,12 +109,12 @@ class Tests : public TestCase
 } tests("tests");
 
 
-struct Fixture : public wobble::tests::Fixture
+struct ValueFixture : public wobble::tests::Fixture
 {
     int val = 0;
 };
 
-struct TestFixture : public FixtureTestCase<Fixture>
+struct TestFixture : public FixtureTestCase<ValueFixture>
 {
     using FixtureTestCase::FixtureTestCase;
 

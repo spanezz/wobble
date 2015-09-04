@@ -689,9 +689,11 @@ struct Fixture
 /**
  * Test case that includes a fixture
  */
-template<typename Fixture>
+template<typename FIXTURE>
 struct FixtureTestCase : public TestCase
 {
+    typedef FIXTURE Fixture;
+
     Fixture* fixture = 0;
     std::function<Fixture*()> make_fixture;
 
