@@ -253,27 +253,27 @@ void assert_not_re_matches(const std::string& actual, const std::string& expecte
 template<class A>
 struct Actual
 {
-    A actual;
-    Actual(const A& actual) : actual(actual) {}
+    A _actual;
+    Actual(const A& actual) : _actual(actual) {}
     ~Actual() {}
 
-    void istrue() const { assert_true(actual); }
-    void isfalse() const { assert_false(actual); }
-    template<typename E> void operator==(const E& expected) const { assert_equal(actual, expected); }
-    template<typename E> void operator!=(const E& expected) const { assert_not_equal(actual, expected); }
-    template<typename E> void operator<(const E& expected) const { return assert_less(actual, expected); }
-    template<typename E> void operator<=(const E& expected) const { return assert_less_equal(actual, expected); }
-    template<typename E> void operator>(const E& expected) const { return assert_greater(actual, expected); }
-    template<typename E> void operator>=(const E& expected) const { return assert_greater_equal(actual, expected); }
+    void istrue() const { assert_true(_actual); }
+    void isfalse() const { assert_false(_actual); }
+    template<typename E> void operator==(const E& expected) const { assert_equal(_actual, expected); }
+    template<typename E> void operator!=(const E& expected) const { assert_not_equal(_actual, expected); }
+    template<typename E> void operator<(const E& expected) const { return assert_less(_actual, expected); }
+    template<typename E> void operator<=(const E& expected) const { return assert_less_equal(_actual, expected); }
+    template<typename E> void operator>(const E& expected) const { return assert_greater(_actual, expected); }
+    template<typename E> void operator>=(const E& expected) const { return assert_greater_equal(_actual, expected); }
 };
 
 struct ActualCString
 {
-    const char* actual;
-    ActualCString(const char* s) : actual(s) {}
+    const char* _actual;
+    ActualCString(const char* s) : _actual(s) {}
 
-    void istrue() const { return assert_true(actual); }
-    void isfalse() const { return assert_false(actual); }
+    void istrue() const { return assert_true(_actual); }
+    void isfalse() const { return assert_false(_actual); }
     void operator==(const char* expected) const;
     void operator==(const std::string& expected) const;
     void operator!=(const char* expected) const;
@@ -294,12 +294,6 @@ struct ActualStdString : public Actual<std::string>
 {
     ActualStdString(const std::string& s) : Actual<std::string>(s) {}
 
-//    void operator==(const std::string& expected) const { assert_equal(actual, expected); }
-//    void operator!=(const std::string& expected) const { assert_not_equal(actual, expected); }
-//    void operator<(const std::string& expected) const { assert_less(actual, expected); }
-//    void operator<=(const std::string& expected) const { return TestLte<std::string, std::string>(actual, expected); }
-//    void operator>(const std::string& expected) const { return TestGt<std::string, std::string>(actual, expected); }
-//    void operator>=(const std::string& expected) const { return TestGte<std::string, std::string>(actual, expected); }
     void startswith(const std::string& expected) const;
     void endswith(const std::string& expected) const;
     void contains(const std::string& expected) const;
