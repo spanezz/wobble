@@ -64,6 +64,8 @@ class Tests : public TestCase
             wassert(actual("foo").startswith("fo"));
             wassert(actual("foo").endswith("oo"));
             wassert(actual("foo").contains("o"));
+            wassert(actual("foo").matches("^fo"));
+            wassert(actual("foo").not_matches("^oo"));
         });
 
         add_method("stdstrings", []() {
@@ -78,6 +80,8 @@ class Tests : public TestCase
             wassert(actual(string("foo")).startswith("fo"));
             wassert(actual(string("foo")).endswith("oo"));
             wassert(actual(string("foo")).contains("o"));
+            wassert(actual(string("foo")).matches("^fo"));
+            wassert(actual(string("foo")).not_matches("^oo"));
         });
 
         add_method("strings", []() {

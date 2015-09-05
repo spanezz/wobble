@@ -233,6 +233,22 @@ void assert_contains(const std::string& actual, const std::string& expected);
 /// Ensure that the string \a actual does not contain \a expected
 void assert_not_contains(const std::string& actual, const std::string& expected);
 
+/**
+ * Ensure that the string \a actual matches the extended regular expression
+ * \a expected.
+ *
+ * The syntax is that of extended regular expression (see man regex(7) ).
+ */
+void assert_re_matches(const std::string& actual, const std::string& expected);
+
+/**
+ * Ensure that the string \a actual does not match the extended regular
+ * expression \a expected.
+ *
+ * The syntax is that of extended regular expression (see man regex(7) ).
+ */
+void assert_not_re_matches(const std::string& actual, const std::string& expected);
+
 
 template<class A>
 struct Actual
@@ -270,6 +286,8 @@ struct ActualCString
     void endswith(const std::string& expected) const;
     void contains(const std::string& expected) const;
     void not_contains(const std::string& expected) const;
+    void matches(const std::string& re) const;
+    void not_matches(const std::string& re) const;
 };
 
 struct ActualStdString : public Actual<std::string>
@@ -286,8 +304,8 @@ struct ActualStdString : public Actual<std::string>
     void endswith(const std::string& expected) const;
     void contains(const std::string& expected) const;
     void not_contains(const std::string& expected) const;
-//    TestRegexp matches(const std::string& regexp) const { return TestRegexp(actual, regexp); }
-//    TestFileExists fileexists() const { return TestFileExists(actual); }
+    void matches(const std::string& re) const;
+    void not_matches(const std::string& re) const;
 };
 
 struct ActualDouble : public Actual<double>
@@ -701,7 +719,7 @@ struct FixtureTestCase : public TestCase
     FixtureTestCase(const std::string& name, Args... args)
         : TestCase(name)
     {
-        make_fixture = [&]() { return new Fixture(&args...); };
+        make_fixture = [&]() { return new Fixture(args...); };
     }
 
     void setup() override
