@@ -101,11 +101,15 @@ class Tests : public TestCase
         });
 
         add_method("dirname", []() {
-            wassert(actual(str::dirname("ciao")) == "");
+            wassert(actual(str::dirname("ciao")) == ".");
             wassert(actual(str::dirname("a/ciao")) == "a");
             wassert(actual(str::dirname("a/b/c/c/d/e/ciao")) == "a/b/c/c/d/e");
             wassert(actual(str::dirname("/a/ciao")) == "/a");
             wassert(actual(str::dirname("/ciao")) == "/");
+            wassert(actual(str::dirname("/ciao///")) == "/");
+            wassert(actual(str::dirname("/a//b/")) == "/a");
+            wassert(actual(str::dirname("")) == ".");
+            wassert(actual(str::dirname("ciao///")) == ".");
         });
 
         add_method("joinpath", []() {
@@ -130,6 +134,57 @@ class Tests : public TestCase
             wassert(actual(str::normpath("foo//bar")) == "foo/bar");
             wassert(actual(str::normpath("foo/./bar")) == "foo/bar");
             wassert(actual(str::normpath("foo/foo/../bar")) == "foo/bar");
+        });
+
+        add_method("split", []() {
+            str::Split split("a/b//c", "/");
+            auto a = split.begin();
+            wassert(actual(a != split.end()).istrue());
+            wassert(actual(*a) == "a");
+            ++a;
+            wassert(actual(a != split.end()).istrue());
+            wassert(actual(*a) == "b");
+            ++a;
+            wassert(actual(a != split.end()).istrue());
+            wassert(actual(*a) == "");
+            ++a;
+            wassert(actual(a != split.end()).istrue());
+            wassert(actual(*a) == "c");
+            ++a;
+            wassert(actual(a == split.end()).istrue());
+
+            vector<string> res;
+            split = str::Split("std::string::", "::");
+            std::copy(split.begin(), split.end(), std::back_inserter(res));
+            wassert(actual(res.size()) == 3);
+            wassert(actual(res[0]) == "std");
+            wassert(actual(res[1]) == "string");
+            wassert(actual(res[2]) == "");
+        });
+
+        add_method("split_noempty", []() {
+            vector<string> res;
+            str::Split split("a/b//c", "/", true);
+            std::copy(split.begin(), split.end(), std::back_inserter(res));
+            wassert(actual(res.size()) == 3);
+            wassert(actual(res[0]) == "a");
+            wassert(actual(res[1]) == "b");
+            wassert(actual(res[2]) == "c");
+
+            res.clear();
+            split = str::Split("///a/b/////c/", "/", true);
+            std::copy(split.begin(), split.end(), std::back_inserter(res));
+            wassert(actual(res.size()) == 3);
+            wassert(actual(res[0]) == "a");
+            wassert(actual(res[1]) == "b");
+            wassert(actual(res[2]) == "c");
+
+            res.clear();
+            split = str::Split("::std::::string::", "::", true);
+            std::copy(split.begin(), split.end(), std::back_inserter(res));
+            wassert(actual(res.size()) == 2);
+            wassert(actual(res[0]) == "std");
+            wassert(actual(res[1]) == "string");
         });
 
         add_method("encode_cstring", []() {
