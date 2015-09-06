@@ -104,6 +104,10 @@ class Tests : public TestCase
             wassert(actual("foo") >= string("bar"));
         });
 
+        add_method("function", []() {
+            wassert(actual_function([]() { throw std::runtime_error("foobar"); }).throws("ooba"));
+        });
+
         auto parametric = [](int val) {
             wassert(actual(val) != 0);
         };

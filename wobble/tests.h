@@ -316,6 +316,15 @@ inline ActualCString actual(char* actual) { return ActualCString(actual); }
 inline ActualStdString actual(const std::string& actual) { return ActualStdString(actual); }
 inline ActualDouble actual(double actual) { return ActualDouble(actual); }
 
+struct ActualFunction : public Actual<std::function<void()>>
+{
+    using Actual::Actual;
+
+    void throws(const std::string& what_match) const;
+};
+
+inline ActualFunction actual_function(std::function<void()> actual) { return ActualFunction(actual); }
+
 
 /**
  * Run the given command, raising TestFailed with the appropriate backtrace

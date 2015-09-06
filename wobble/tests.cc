@@ -344,8 +344,17 @@ void ActualDouble::not_almost_equal(double expected, unsigned places) const
     throw TestFailed(ss.str());
 }
 
+void ActualFunction::throws(const std::string& what_match) const
 {
+    bool thrown = false;
+    try {
+        _actual();
+    } catch (std::exception& e) {
+        thrown = true;
+        wassert(actual(e.what()).matches(what_match));
     }
+    if (!thrown)
+        throw TestFailed("code did not throw any exception");
 }
 
 #if 0
