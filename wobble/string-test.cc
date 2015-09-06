@@ -113,6 +113,9 @@ class Tests : public TestCase
         });
 
         add_method("joinpath", []() {
+            wassert(actual(str::joinpath(string("a"), "b")) == "a/b");
+            char b[] = "b";
+            wassert(actual(str::joinpath(string("a"), b)) == "a/b");
             wassert(actual(str::joinpath("a", "b")) == "a/b");
             wassert(actual(str::joinpath("a/", "b")) == "a/b");
             wassert(actual(str::joinpath("a", "/b")) == "a/b");

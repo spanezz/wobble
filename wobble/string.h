@@ -184,11 +184,11 @@ void appendpath(std::string& dest, const char* path2);
 void appendpath(std::string& dest, const std::string& path2);
 
 /// Append an arbitrary number of path components to \a dest
-template<typename S, typename... Args>
-void appendpath(std::string& dest, S first, Args... next)
+template<typename S1, typename S2, typename... Args>
+void appendpath(std::string& dest, S1 first, S2 second, Args... next)
 {
     appendpath(dest, first);
-    appendpath(dest, next...);
+    appendpath(dest, second, next...);
 }
 
 /// Join two or more paths, adding slashes when appropriate
