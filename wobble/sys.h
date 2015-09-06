@@ -258,7 +258,7 @@ struct Path : public NamedFileDescriptor
     /**
      * Open the given pathname calling parent.openat, with flags | O_PATH
      */
-    Path(Path& parent, const char* pathname, int flags);
+    Path(Path& parent, const char* pathname, int flags=0);
     Path(const Path&) = delete;
     Path(Path&&) = default;
     Path& operator=(const Path&) = delete;

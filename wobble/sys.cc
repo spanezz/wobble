@@ -558,7 +558,8 @@ void Path::rmtree()
         else
             unlinkat(i->d_name);
     }
-    unlinkat(".");
+    // TODO: is there a way to do this using fd instead?
+    rmdir(name());
 }
 
 /*
