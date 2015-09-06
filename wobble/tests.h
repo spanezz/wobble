@@ -17,7 +17,6 @@
 
 namespace wobble {
 namespace tests {
-struct Location;
 struct LocationInfo;
 }
 }

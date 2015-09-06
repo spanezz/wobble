@@ -1,0 +1,46 @@
+#!/bin/sh -e
+
+TOP_SRCDIR=`pwd`/`dirname $0`
+
+CMD=`pwd`/"$1"
+
+## Set up the test environment
+
+TESTDIR="`mktemp -d`"
+cd "$TESTDIR"
+
+## Clean up the test environment at exit unless asked otherwise
+cleanup() {
+	test -z "$PRESERVE" && rm -rf "$TESTDIR"
+}
+trap cleanup EXIT
+
+DIR=`dirname $CMD`
+BASE=`basename $CMD`
+if [ ! -z "$DEBUGGER" ]
+then
+	echo "Running $DEBUGGER $CMD $ARGS"
+	RES=0
+        if ! $DEBUGGER $CMD $ARGS
+        then
+                RES=$?
+                echo "Failed with result $RES"
+        fi
+else
+        echo "Running $CMD $ARGS"
+        RES=0
+        if ! $CMD $ARGS
+        then
+                RES=$?
+                echo "Failed with result $RES"
+        fi
+fi
+
+if [ ! -z "$PAUSE" ]
+then
+	echo "Post-test inspection requested."
+	echo "Exit this shell to cleanup the test environment."
+	bash
+fi
+
+exit $RES
