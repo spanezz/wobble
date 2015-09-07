@@ -529,7 +529,7 @@ bool SimpleTestController::test_method_should_run(const std::string& fullname) c
     if (!whitelist.empty() && fnmatch(whitelist.c_str(), fullname.c_str(), 0) == FNM_NOMATCH)
         return false;
 
-    if (!blacklist.empty() && fnmatch(blacklist.c_str(), fullname.c_str(), 0) == FNM_NOMATCH)
+    if (!blacklist.empty() && fnmatch(blacklist.c_str(), fullname.c_str(), 0) != FNM_NOMATCH)
         return false;
 
     return true;
