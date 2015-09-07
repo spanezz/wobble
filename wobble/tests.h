@@ -739,7 +739,7 @@ struct FixtureTestCase : public TestCase
     FixtureTestCase(const std::string& name, Args... args)
         : TestCase(name)
     {
-        make_fixture = [&]() { return new Fixture(args...); };
+        make_fixture = [=]() { return new Fixture(args...); };
     }
 
     void setup() override
