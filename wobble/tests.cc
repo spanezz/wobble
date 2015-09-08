@@ -13,8 +13,6 @@
 #include <iomanip>
 #include <sys/types.h>
 #include <regex.h>
-//#include <wobble/regexp.h>
-//#include <wobble/sys/fs.h>
 
 using namespace std;
 using namespace wobble;
