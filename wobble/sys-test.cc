@@ -86,6 +86,36 @@ class Tests : public TestCase
         add_method("which", []() {
             wassert(actual(which("ls")) == "/bin/ls");
         });
+
+        add_method("unlink_ifexists", []() {
+            const char* fname = "test_unlink_ifexists";
+
+            unlink_ifexists(fname);
+            wassert(actual(unlink_ifexists(fname)).isfalse());
+            write_file(fname, "test");
+            wassert(actual(exists(fname)).istrue());
+            wassert(actual(unlink_ifexists(fname)).istrue());
+            wassert(actual(exists(fname)).isfalse());
+        });
+
+        add_method("rename_ifexists", []() {
+            const char* fname = "test_rename_ifexists";
+            const char* fname1 = "test_rename_ifexists1";
+
+            unlink_ifexists(fname);
+            unlink_ifexists(fname1);
+            wassert(actual(rename_ifexists(fname, fname1)).isfalse());
+
+            write_file(fname, "test");
+            wassert(actual(exists(fname)).istrue());
+            wassert(actual(exists(fname1)).isfalse());
+
+            wassert(actual(rename_ifexists(fname, fname1)).istrue());
+            wassert(actual(exists(fname)).isfalse());
+            wassert(actual(exists(fname1)).istrue());
+
+            unlink(fname1);
+        });
     }
 } test("sys");
 
