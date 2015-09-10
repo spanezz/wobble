@@ -350,6 +350,12 @@ inline ActualFunction actual_function(std::function<void()> actual) { return Act
         throw TestFailed(e, __FILE__, __LINE__, #__VA_ARGS__, wobble_test_location_info); \
     } } while(0)
 
+/// Shortcut to check that a given expression returns true
+#define wassert_true(...) wassert(actual(__VA_ARGS__).istrue())
+
+/// Shortcut to check that a given expression returns false
+#define wassert_false(...) wassert(actual(__VA_ARGS__).isfalse())
+
 /**
  * Call a function returning its result, and raising TestFailed with the
  * appropriate backtrace information if it threw an exception.
