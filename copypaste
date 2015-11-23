@@ -15,7 +15,7 @@ class Copypaste:
     def convert(self, buf):
         if self.namespace:
             dest_namespace = self.namespace.encode("utf-8")
-            dest_const = self.namespace.upper().replace("::", "-").encode("utf-8")
+            dest_const = self.namespace.upper().replace("::", "_").encode("utf-8")
             ns_components = self.namespace.split("::")
             ns_open = "".join("namespace {} {{\n".format(x) for x in ns_components).encode("utf-8")
             ns_close = "".join("\n}" for x in range(len(ns_components) + 1)).encode("utf-8")
