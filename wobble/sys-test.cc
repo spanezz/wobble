@@ -125,6 +125,11 @@ class Tests : public TestCase
             wassert(actual(f.read(buf, 3)) == 3);
             buf[3] == 0;
             wassert(actual(buf) == "foo");
+
+            wassert(actual(f.pwrite("ar", 2, 1)) == 2);
+            wassert(actual(f.pread(buf, 3, 0)) == 3);
+            wassert(actual(buf) == "far");
+
             f.close();
         });
     }
