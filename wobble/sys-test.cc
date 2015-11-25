@@ -116,6 +116,17 @@ class Tests : public TestCase
 
             unlink(fname1);
         });
+
+        add_method("file", []() {
+            File f("test", O_RDWR | O_CREAT, 0666);
+            wassert(actual(f.write("foo", 3)) == 3);
+            wassert(actual(f.lseek(0)) == 0);
+            char buf[4];
+            wassert(actual(f.read(buf, 3)) == 3);
+            buf[3] == 0;
+            wassert(actual(buf) == "foo");
+            f.close();
+        });
     }
 } test("sys");
 
