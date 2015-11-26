@@ -15,6 +15,7 @@ class Copypaste:
     def convert(self, buf):
         if self.namespace:
             dest_namespace = self.namespace.encode("utf-8")
+            dest_location_info = (self.namespace.replace("::", "_") + "_test_location_info").encode("utf-8")
             dest_const = self.namespace.upper().replace("::", "_").encode("utf-8")
             ns_components = self.namespace.split("::")
             ns_open = "".join("namespace {} {{\n".format(x) for x in ns_components).encode("utf-8")
@@ -23,6 +24,7 @@ class Copypaste:
 
         # Replace namespace and const names
         if self.namespace:
+            buf = buf.replace(b"wobble_test_location_info", dest_location_info)
             buf = buf.replace(b"namespace wobble {\n", ns_open)
             buf = buf.replace(b"\n}\n}", ns_close)
             buf = buf.replace(b"wobble", dest_namespace)
