@@ -333,6 +333,11 @@ public:
     File(File&&) = default;
     File(const File&) = delete;
 
+    /**
+     * Create an unopened File object for the given pathname
+     */
+    File(const std::string& pathname);
+
     /// Wrapper around open(2)
     File(const std::string& pathname, int flags, mode_t mode=0777);
 
@@ -347,6 +352,15 @@ public:
 
     File& operator=(const File&) = delete;
     File& operator=(File&&) = default;
+
+    /// Wrapper around open(2)
+    void open(int flags, mode_t mode=0777);
+
+    /**
+     * Wrap open(2) and return false instead of throwing an exception if open
+     * fails with ENOENT
+     */
+    bool open_ifexists(int flags, mode_t mode=0777);
 
     static File mkstemp(const std::string& prefix);
 };

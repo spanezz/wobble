@@ -123,7 +123,7 @@ class Tests : public TestCase
             wassert(actual(f.lseek(0)) == 0);
             char buf[4];
             wassert(actual(f.read(buf, 3)) == 3);
-            buf[3] == 0;
+            buf[3] = 0;
             wassert(actual(buf) == "foo");
 
             wassert(actual(f.pwrite("ar", 2, 1)) == 2);
@@ -131,6 +131,12 @@ class Tests : public TestCase
             wassert(actual(buf) == "far");
 
             f.close();
+
+            wassert(actual(f.open_ifexists(O_RDONLY)));
+            f.close();
+
+            File f1("test-does-not-exists");
+            wassert(actual(f1.open_ifexists(O_RDONLY)).isfalse());
         });
     }
 } test("sys");
