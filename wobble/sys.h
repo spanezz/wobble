@@ -166,11 +166,14 @@ public:
     int dup();
 
     size_t read(void* buf, size_t count);
-    size_t write(const void* buf, size_t count);
-    off_t lseek(off_t offset, int whence=SEEK_SET);
 
-    size_t pread(void* buf, size_t count, off_t offset);
-    size_t pwrite(const void* buf, size_t count, off_t offset);
+    /**
+     * Read all the data into buf, throwing runtime_error in case of a partial
+     * read
+     */
+    void read_all_or_throw(void* buf, size_t count);
+
+    size_t write(const void* buf, size_t count);
 
     /// Write all the data in buf, retrying partial writes
     void write_all_or_retry(const void* buf, size_t count);
@@ -180,6 +183,12 @@ public:
      * write
      */
     void write_all_or_throw(const void* buf, size_t count);
+
+    off_t lseek(off_t offset, int whence=SEEK_SET);
+
+    size_t pread(void* buf, size_t count, off_t offset);
+    size_t pwrite(const void* buf, size_t count, off_t offset);
+
 
     MMap mmap(size_t length, int prot, int flags, off_t offset=0);
 

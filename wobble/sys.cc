@@ -272,6 +272,13 @@ size_t FileDescriptor::read(void* buf, size_t count)
     return res;
 }
 
+void FileDescriptor::read_all_or_throw(void* buf, size_t count)
+{
+    size_t res = read(buf, count);
+    if (res != count)
+        throw_runtime_error("partial read");
+}
+
 size_t FileDescriptor::write(const void* buf, size_t count)
 {
     ssize_t res = ::write(fd, buf, count);
