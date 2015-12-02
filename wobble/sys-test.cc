@@ -130,6 +130,10 @@ class Tests : public TestCase
             wassert(actual(f.pread(buf, 3, 0)) == 3);
             wassert(actual(buf) == "far");
 
+            wassert(actual(f.pwrite(string("oz"), 1)) == 2);
+            wassert(actual(f.pread(buf, 3, 0)) == 3);
+            wassert(actual(buf) == "foz");
+
             f.close();
 
             wassert(actual(f.open_ifexists(O_RDONLY)));
