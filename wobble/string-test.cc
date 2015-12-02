@@ -163,6 +163,11 @@ class Tests : public TestCase
             wassert(actual(res[0]) == "std");
             wassert(actual(res[1]) == "string");
             wassert(actual(res[2]) == "");
+
+            res.clear();
+            split = str::Split("", ",");
+            std::copy(split.begin(), split.end(), std::back_inserter(res));
+            wassert(actual(res.size()) == 0);
         });
 
         add_method("split_noempty", []() {
