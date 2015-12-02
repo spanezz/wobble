@@ -332,6 +332,15 @@ struct ActualFunction : public Actual<std::function<void()>>
 
 inline ActualFunction actual_function(std::function<void()> actual) { return ActualFunction(actual); }
 
+struct ActualFile : public Actual<std::string>
+{
+    using Actual::Actual;
+
+    void exists() const;
+    void not_exists() const;
+};
+
+inline ActualFile actual_file(const std::string& pathname) { return ActualFile(pathname); }
 
 /**
  * Run the given command, raising TestFailed with the appropriate backtrace
