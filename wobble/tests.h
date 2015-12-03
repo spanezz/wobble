@@ -352,11 +352,11 @@ inline ActualFile actual_file(const std::string& pathname) { return ActualFile(p
 #define wassert(...) \
     do { try { \
         __VA_ARGS__ ; \
-    } catch (TestFailed& e) { \
+    } catch (wobble::tests::TestFailed& e) { \
         e.add_stack_info(__FILE__, __LINE__, #__VA_ARGS__, wobble_test_location_info); \
         throw; \
     } catch (std::exception& e) { \
-        throw TestFailed(e, __FILE__, __LINE__, #__VA_ARGS__, wobble_test_location_info); \
+        throw wobble::tests::TestFailed(e, __FILE__, __LINE__, #__VA_ARGS__, wobble_test_location_info); \
     } } while(0)
 
 /// Shortcut to check that a given expression returns true
@@ -375,11 +375,11 @@ inline ActualFile actual_file(const std::string& pathname) { return ActualFile(p
 #define wcallchecked(func) \
     [&]() { try { \
         return func; \
-    } catch (TestFailed& e) { \
+    } catch (wobble::tests::TestFailed& e) { \
         e.add_stack_info(__FILE__, __LINE__, #func, wobble_test_location_info); \
         throw; \
     } catch (std::exception& e) { \
-        throw TestFailed(e, __FILE__, __LINE__, #func, wobble_test_location_info); \
+        throw wobble::tests::TestFailed(e, __FILE__, __LINE__, #func, wobble_test_location_info); \
     } }()
 
 
