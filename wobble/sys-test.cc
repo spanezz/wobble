@@ -73,6 +73,13 @@ class Tests : public TestCase
             wassert(actual(files.find("tmp") != files.end()).istrue());
         });
 
+        add_method("makedirs", []() {
+            wassert(actual(makedirs("makedirs/foo/bar/baz")).istrue());
+            wassert(actual(isdir("makedirs/foo/bar/baz")).istrue());
+            wassert(actual(makedirs("makedirs/foo/bar/baz")).isfalse());
+            wassert(actual(isdir("makedirs/foo/bar/baz")).istrue());
+        });
+
         add_method("rmtree", []() {
             makedirs("foo/bar/baz");
             makedirs("foo/bar/gnat");
