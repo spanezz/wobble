@@ -108,6 +108,10 @@ class Tests : public TestCase
             wassert(actual_function([]() { throw std::runtime_error("foobar"); }).throws("ooba"));
         });
 
+        add_method("skip", []() {
+            throw TestSkipped();
+        });
+
         auto parametric = [](int val) {
             wassert(actual(val) != 0);
         };
