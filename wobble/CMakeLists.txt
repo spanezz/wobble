@@ -9,7 +9,7 @@ check_cxx_source_compiles(
       return 0;
   }" HAVE_STRUCT_DIRENT_D_TYPE)
 
-add_definitions( --std=c++11 -DHAVE_CONFIG_H -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 )
+add_definitions( --std=c++11 -Wall -Werror -DHAVE_CONFIG_H -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 )
 
 # glob through source files/headers
 file(GLOB WOBBLE_HEADERS *.h)
