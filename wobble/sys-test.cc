@@ -53,7 +53,7 @@ class Tests : public TestCase
             for (auto& i: dir)
                 files.insert(i.d_name);
 
-            wassert(actual(files.size()) > 0);
+            wassert(actual(files.size()) > 0u);
             wassert(actual(files.find(".") != files.end()).istrue());
             wassert(actual(files.find("..") != files.end()).istrue());
             wassert(actual(files.find("etc") != files.end()).istrue());
@@ -65,7 +65,7 @@ class Tests : public TestCase
             for (auto& i: dir)
                 files.insert(i.d_name);
 
-            wassert(actual(files.size()) > 0);
+            wassert(actual(files.size()) > 0u);
             wassert(actual(files.find(".") != files.end()).istrue());
             wassert(actual(files.find("..") != files.end()).istrue());
             wassert(actual(files.find("etc") != files.end()).istrue());
@@ -126,19 +126,19 @@ class Tests : public TestCase
 
         add_method("file", []() {
             File f("test", O_RDWR | O_CREAT, 0666);
-            wassert(actual(f.write("foo", 3)) == 3);
+            wassert(actual(f.write("foo", 3)) == 3u);
             wassert(actual(f.lseek(0)) == 0);
             char buf[4];
-            wassert(actual(f.read(buf, 3)) == 3);
+            wassert(actual(f.read(buf, 3)) == 3u);
             buf[3] = 0;
             wassert(actual(buf) == "foo");
 
-            wassert(actual(f.pwrite("ar", 2, 1)) == 2);
-            wassert(actual(f.pread(buf, 3, 0)) == 3);
+            wassert(actual(f.pwrite("ar", 2, 1)) == 2u);
+            wassert(actual(f.pread(buf, 3, 0)) == 3u);
             wassert(actual(buf) == "far");
 
-            wassert(actual(f.pwrite(string("oz"), 1)) == 2);
-            wassert(actual(f.pread(buf, 3, 0)) == 3);
+            wassert(actual(f.pwrite(string("oz"), 1)) == 2u);
+            wassert(actual(f.pread(buf, 3, 0)) == 3u);
             wassert(actual(buf) == "foz");
 
             f.close();

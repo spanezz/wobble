@@ -159,7 +159,7 @@ class Tests : public TestCase
             vector<string> res;
             split = str::Split("std::string::", "::");
             std::copy(split.begin(), split.end(), std::back_inserter(res));
-            wassert(actual(res.size()) == 3);
+            wassert(actual(res.size()) == 3u);
             wassert(actual(res[0]) == "std");
             wassert(actual(res[1]) == "string");
             wassert(actual(res[2]) == "");
@@ -167,14 +167,14 @@ class Tests : public TestCase
             res.clear();
             split = str::Split("", ",");
             std::copy(split.begin(), split.end(), std::back_inserter(res));
-            wassert(actual(res.size()) == 0);
+            wassert(actual(res.size()) == 0u);
         });
 
         add_method("split_noempty", []() {
             vector<string> res;
             str::Split split("a/b//c", "/", true);
             std::copy(split.begin(), split.end(), std::back_inserter(res));
-            wassert(actual(res.size()) == 3);
+            wassert(actual(res.size()) == 3u);
             wassert(actual(res[0]) == "a");
             wassert(actual(res[1]) == "b");
             wassert(actual(res[2]) == "c");
@@ -182,7 +182,7 @@ class Tests : public TestCase
             res.clear();
             split = str::Split("///a/b/////c/", "/", true);
             std::copy(split.begin(), split.end(), std::back_inserter(res));
-            wassert(actual(res.size()) == 3);
+            wassert(actual(res.size()) == 3u);
             wassert(actual(res[0]) == "a");
             wassert(actual(res[1]) == "b");
             wassert(actual(res[2]) == "c");
@@ -190,7 +190,7 @@ class Tests : public TestCase
             res.clear();
             split = str::Split("::std::::string::", "::", true);
             std::copy(split.begin(), split.end(), std::back_inserter(res));
-            wassert(actual(res.size()) == 2);
+            wassert(actual(res.size()) == 2u);
             wassert(actual(res[0]) == "std");
             wassert(actual(res[1]) == "string");
         });
@@ -198,7 +198,7 @@ class Tests : public TestCase
         add_method("encode_cstring", []() {
             size_t len;
             wassert(actual(str::decode_cstring("cia\\x00o", len)) == string("cia\0o", 5));
-            wassert(actual(len) == 8);
+            wassert(actual(len) == 8u);
             wassert(actual(str::encode_cstring(string("cia\0o", 5))) == "cia\\x00o");
         });
 
