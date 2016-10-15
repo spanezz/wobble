@@ -263,31 +263,31 @@ public:
 /**
  * File descriptor that gets automatically closed in the object destructor.
  */
-struct ManagedFileDescriptor : public NamedFileDescriptor
+struct ManagedNamedFileDescriptor : public NamedFileDescriptor
 {
     using NamedFileDescriptor::NamedFileDescriptor;
 
-    ManagedFileDescriptor(ManagedFileDescriptor&&) = default;
-    ManagedFileDescriptor(const ManagedFileDescriptor&) = delete;
+    ManagedNamedFileDescriptor(ManagedNamedFileDescriptor&&) = default;
+    ManagedNamedFileDescriptor(const ManagedNamedFileDescriptor&) = delete;
 
     /**
      * The destructor closes the file descriptor, but does not check errors on
      * ::close().
      *
      * In normal program flow, it is a good idea to explicitly call
-     * ManagedFileDescriptor::close() in places where it can throw safely.
+     * ManagedNamedFileDescriptor::close() in places where it can throw safely.
      */
-    ~ManagedFileDescriptor();
+    ~ManagedNamedFileDescriptor();
 
-    ManagedFileDescriptor& operator=(const ManagedFileDescriptor&) = delete;
-    ManagedFileDescriptor& operator=(ManagedFileDescriptor&&);
+    ManagedNamedFileDescriptor& operator=(const ManagedNamedFileDescriptor&) = delete;
+    ManagedNamedFileDescriptor& operator=(ManagedNamedFileDescriptor&&);
 };
 
 
 /**
  * Wrap a path on the file system opened with O_PATH.
  */
-struct Path : public NamedFileDescriptor
+struct Path : public ManagedNamedFileDescriptor
 {
     /**
      * Iterator for directory entries
@@ -341,7 +341,7 @@ struct Path : public NamedFileDescriptor
         bool issock() const;
     };
 
-    using NamedFileDescriptor::NamedFileDescriptor;
+    using ManagedNamedFileDescriptor::ManagedNamedFileDescriptor;
 
     /**
      * Open the given pathname with flags | O_PATH.
@@ -390,12 +390,12 @@ struct Path : public NamedFileDescriptor
 
 
 /**
- * NamedFileDescriptor which closes itself on destruction
+ * File in the file system
  */
-class File : public NamedFileDescriptor
+class File : public ManagedNamedFileDescriptor
 {
 public:
-    using NamedFileDescriptor::NamedFileDescriptor;
+    using ManagedNamedFileDescriptor::ManagedNamedFileDescriptor;
 
     File(File&&) = default;
     File(const File&) = delete;

@@ -377,15 +377,15 @@ void NamedFileDescriptor::throw_runtime_error(const char* desc)
 
 
 /*
- * ManagedFileDescriptor
+ * ManagedNamedFileDescriptor
  */
 
-ManagedFileDescriptor::~ManagedFileDescriptor()
+ManagedNamedFileDescriptor::~ManagedNamedFileDescriptor()
 {
     if (fd != -1) ::close(fd);
 }
 
-ManagedFileDescriptor& ManagedFileDescriptor::operator=(ManagedFileDescriptor&& o)
+ManagedNamedFileDescriptor& ManagedNamedFileDescriptor::operator=(ManagedNamedFileDescriptor&& o)
 {
     if (&o == this) return *this;
     close();
@@ -401,7 +401,7 @@ ManagedFileDescriptor& ManagedFileDescriptor::operator=(ManagedFileDescriptor&& 
  */
 
 Path::Path(const char* pathname, int flags)
-    : NamedFileDescriptor(-1, pathname)
+    : ManagedNamedFileDescriptor(-1, pathname)
 {
     fd = open(pathname, flags | O_PATH);
     if (fd == -1)
@@ -409,7 +409,7 @@ Path::Path(const char* pathname, int flags)
 }
 
 Path::Path(const std::string& pathname, int flags)
-    : NamedFileDescriptor(-1, pathname)
+    : ManagedNamedFileDescriptor(-1, pathname)
 {
     fd = open(pathname.c_str(), flags | O_PATH);
     if (fd == -1)
@@ -417,7 +417,7 @@ Path::Path(const std::string& pathname, int flags)
 }
 
 Path::Path(Path& parent, const char* pathname, int flags)
-    : NamedFileDescriptor(parent.openat(pathname, flags | O_PATH),
+    : ManagedNamedFileDescriptor(parent.openat(pathname, flags | O_PATH),
             str::joinpath(parent.name(), pathname))
 {
 }
@@ -643,12 +643,12 @@ void Path::rmtree()
  */
 
 File::File(const std::string& pathname)
-    : NamedFileDescriptor(-1, pathname)
+    : ManagedNamedFileDescriptor(-1, pathname)
 {
 }
 
 File::File(const std::string& pathname, int flags, mode_t mode)
-    : NamedFileDescriptor(-1, pathname)
+    : ManagedNamedFileDescriptor(-1, pathname)
 {
     open(flags, mode);
 }
