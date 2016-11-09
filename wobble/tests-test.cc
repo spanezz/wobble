@@ -1,4 +1,5 @@
 #include "tests.h"
+#include "sys.h"
 
 using namespace std;
 using namespace wobble;
@@ -117,6 +118,16 @@ class Tests : public TestCase
         };
         add_method("parametric1", parametric, 1);
         add_method("parametric2", parametric, 2);
+
+        add_method("file", []() {
+            sys::write_file("testfile", "foo");
+            wassert(actual_file("testfile").exists());
+            wassert(actual_file("testfile-foobarbaz").not_exists());
+            wassert(actual_file("testfile").startswith(""));
+            wassert(actual_file("testfile").startswith("f"));
+            wassert(actual_file("testfile").startswith("fo"));
+            wassert(actual_file("testfile").startswith("foo"));
+        });
     }
 } tests("tests");
 
