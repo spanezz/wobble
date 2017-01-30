@@ -3,7 +3,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-//#include <cstdlib>
+#include <cstring>
 #include <set>
 //#include <unistd.h>
 
@@ -148,6 +148,48 @@ class Tests : public TestCase
 
             File f1("test-does-not-exists");
             wassert(actual(f1.open_ifexists(O_RDONLY)).isfalse());
+        });
+
+        add_method("ofd_lock", []() {
+            File f1("test", O_RDWR | O_CREAT, 0666);
+            File f2("test", O_RDWR);
+
+            struct flock lk1;
+            memset(&lk1, 0, sizeof(lk1));
+            struct flock lk2;
+            memset(&lk2, 0, sizeof(lk2));
+
+            lk1.l_type = F_RDLCK;
+            lk1.l_whence = SEEK_SET;
+            lk1.l_start = 0;
+            lk1.l_len = 10;
+            wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
+
+            lk2.l_type = F_RDLCK;
+            lk2.l_whence = SEEK_SET;
+            lk2.l_start = 0;
+            lk2.l_len = 10;
+            wassert(actual(f2.ofd_setlkw(lk2, true)).istrue());
+
+            lk2.l_type = F_WRLCK;
+            wassert(actual(f2.ofd_setlk(lk2)).isfalse());
+
+            struct flock lk3;
+            memset(&lk3, 0, sizeof(lk3));
+            lk3.l_type = F_WRLCK;
+            lk3.l_whence = SEEK_SET;
+            lk3.l_start = 5;
+            lk3.l_len = 100;
+            wassert(actual(f2.ofd_getlk(lk3)).isfalse());
+            wassert(actual(lk3.l_type) == F_RDLCK);
+            wassert(actual(lk3.l_whence) == SEEK_SET);
+            wassert(actual(lk3.l_start) == 0);
+            wassert(actual(lk3.l_len) == 10);
+
+            lk1.l_type = F_UNLCK;
+            wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
+
+            wassert(actual(f2.ofd_setlk(lk2)).istrue());
         });
     }
 } test("sys");
