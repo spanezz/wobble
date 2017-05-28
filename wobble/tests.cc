@@ -3,7 +3,7 @@
  * @brief Utility functions for the unit tests
  *
  * Copyright (C) 2006--2007  Peter Rockai (mornfall) <me@mornfall.net>
- * Copyright (C) 2003--2015  Enrico Zini <enrico@debian.org>
+ * Copyright (C) 2003--2017  Enrico Zini <enrico@debian.org>
  */
 
 #include "tests.h"
@@ -517,6 +517,14 @@ TestMethodResult TestCase::run_test(TestController& controller, TestMethod& meth
     }
 
     bool run = true;
+    if (!method.test_function)
+    {
+        // Skip methods with empty test functions
+        res.skipped = true;
+        controller.test_method_end(method, res);
+        return res;
+    }
+
     try {
         method_setup(res);
     } catch (TestSkipped) {

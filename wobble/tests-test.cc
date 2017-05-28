@@ -128,6 +128,8 @@ class Tests : public TestCase
             wassert(actual_file("testfile").startswith("fo"));
             wassert(actual_file("testfile").startswith("foo"));
         });
+
+        add_method("empty_skipped");
     }
 } tests("tests");
 

@@ -6,7 +6,7 @@
  * @brief Utility functions for the unit tests
  *
  * Copyright (C) 2006--2007  Peter Rockai (mornfall) <me@mornfall.net>
- * Copyright (C) 2003--2013  Enrico Zini <enrico@debian.org>
+ * Copyright (C) 2003--2017  Enrico Zini <enrico@debian.org>
  */
 
 #include <string>
@@ -616,8 +616,15 @@ struct TestMethod
     /// Name of the test method
     std::string name;
 
-    /// Main body of the test method
+    /**
+     * Main body of the test method.
+     *
+     * If nullptr, the test will be skipped.
+     */
     std::function<void()> test_function;
+
+    TestMethod(const std::string& name)
+        : name(name) {}
 
     TestMethod(const std::string& name, std::function<void()> test_function)
         : name(name), test_function(test_function) {}
@@ -696,21 +703,33 @@ struct TestCase
     virtual TestMethodResult run_test(TestController& controller, TestMethod& method);
 
     /**
-     * Register a new test method
+     * Register a new test method, with the actual test function to be added
+     * later
      */
-    template<typename ...Args>
-    void add_method(const std::string& name, std::function<void()> test_function)
+    TestMethod& add_method(const std::string& name)
     {
-        methods.emplace_back(name, test_function);
+        methods.emplace_back(name);
+        return methods.back();
     }
 
     /**
      * Register a new test method
      */
     template<typename ...Args>
-    void add_method(const std::string& name, std::function<void()> test_function, Args&&... args)
+    TestMethod& add_method(const std::string& name, std::function<void()> test_function)
+    {
+        methods.emplace_back(name, test_function);
+        return methods.back();
+    }
+
+    /**
+     * Register a new test method
+     */
+    template<typename ...Args>
+    TestMethod& add_method(const std::string& name, std::function<void()> test_function, Args&&... args)
     {
         methods.emplace_back(name, test_function, std::forward<Args>(args)...);
+        return methods.back();
     }
 
     /**
@@ -719,10 +738,11 @@ struct TestCase
      * Any extra arguments to the function will be passed to the test method.
      */
     template<typename FUNC, typename ...Args>
-    void add_method(const std::string& name, FUNC test_function, Args&&... args)
+    TestMethod& add_method(const std::string& name, FUNC test_function, Args&&... args)
     {
         auto f = std::bind(test_function, args...);
         methods.emplace_back(name, f);
+        return methods.back();
     }
 };
 
