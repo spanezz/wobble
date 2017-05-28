@@ -113,12 +113,6 @@ class Tests : public TestCase
             throw TestSkipped();
         });
 
-        auto parametric = [](int val) {
-            wassert(actual(val) != 0);
-        };
-        add_method("parametric1", parametric, 1);
-        add_method("parametric2", parametric, 2);
-
         add_method("file", []() {
             sys::write_file("testfile", "foo");
             wassert(actual_file("testfile").exists());
