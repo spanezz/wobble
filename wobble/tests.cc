@@ -454,16 +454,33 @@ void TestRegistry::register_test_case(TestCase& test_case)
     entries.emplace_back(&test_case);
 }
 
+void TestRegistry::iterate_test_methods(std::function<void(const TestCase&, const TestMethod&)> f)
+{
+    for (auto& e: entries)
+    {
+        e->register_tests_once();
+        for (const auto& m: e->methods)
+            f(*e, m);
+    }
+}
+
 std::vector<TestCaseResult> TestRegistry::run_tests(TestController& controller)
 {
     std::vector<TestCaseResult> res;
     for (auto& e: entries)
     {
-        e->register_tests();
+        e->register_tests_once();
         // TODO: filter on e.name
         res.emplace_back(std::move(e->run_tests(controller)));
     }
     return res;
+}
+
+void TestCase::register_tests_once()
+{
+    if (tests_registered) return;
+    tests_registered = true;
+    register_tests();
 }
 
 TestCaseResult TestCase::run_tests(TestController& controller)

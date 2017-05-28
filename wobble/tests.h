@@ -600,6 +600,14 @@ struct TestRegistry
     void register_test_case(TestCase& test_case);
 
     /**
+     * Iterate on all test methods known by this registry.
+     *
+     * This method does not change the tests, but it cannot be const because it
+     * calls register_tests_once on each TestCase.
+     */
+    void iterate_test_methods(std::function<void(const TestCase&, const TestMethod&)>);
+
+    /**
      * Run all the registered tests using the given controller
      */
     std::vector<TestCaseResult> run_tests(TestController& controller);
@@ -615,6 +623,9 @@ struct TestMethod
 {
     /// Name of the test method
     std::string name;
+
+    /// Documentation attached to this test method
+    std::string doc;
 
     /**
      * Main body of the test method.
@@ -643,12 +654,21 @@ struct TestCase
     /// All registered test methods
     std::vector<TestMethod> methods;
 
+    /// Set to true the first time register_tests_once is run
+    bool tests_registered = false;
+
+
     TestCase(const std::string& name)
         : name(name)
     {
         TestRegistry::get().register_test_case(*this);
     }
     virtual ~TestCase() {}
+
+    /**
+     * Idempotent wrapper for register_tests()
+     */
+    void register_tests_once();
 
     /**
      * This will be called before running the test case, to populate it with
