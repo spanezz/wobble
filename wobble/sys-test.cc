@@ -124,6 +124,17 @@ class Tests : public TestCase
             unlink(fname1);
         });
 
+        add_method("rename", []() {
+            const char* fname = "test_rename";
+            const char* fname1 = "test_rename1";
+
+            write_file(fname, "test");
+            rename(fname, fname1);
+            wassert(actual(exists(fname)).isfalse());
+            wassert(actual(exists(fname1)).istrue());
+            unlink(fname1);
+        });
+
         add_method("file", []() {
             File f("test", O_RDWR | O_CREAT, 0666);
             wassert(actual(f.write("foo", 3)) == 3u);
