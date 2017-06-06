@@ -71,6 +71,12 @@ class Tests : public TestCase
             wassert(actual(files.find("etc") != files.end()).istrue());
             wassert(actual(files.find("bin") != files.end()).istrue());
             wassert(actual(files.find("tmp") != files.end()).istrue());
+
+            struct stat st;;
+            dir.fstatat("etc", st);
+            wassert(actual(S_ISDIR(st.st_mode)).istrue());
+
+            wassert(actual(dir.fstatat_ifexists("wobble_unit_test_file_expected_not_to_be_there", st)).isfalse());
         });
 
         add_method("makedirs", []() {
