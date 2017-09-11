@@ -77,6 +77,9 @@ class Tests : public TestCase
             wassert(actual(S_ISDIR(st.st_mode)).istrue());
 
             wassert(actual(dir.fstatat_ifexists("wobble_unit_test_file_expected_not_to_be_there", st)).isfalse());
+
+            wassert(actual(dir.faccessat("etc", X_OK)).istrue());
+            wassert(actual(dir.faccessat("wobble_unit_test_file_expected_not_to_be_there", F_OK)).isfalse());
         });
 
         add_method("makedirs", []() {
