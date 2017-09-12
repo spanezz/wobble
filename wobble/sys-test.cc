@@ -211,6 +211,25 @@ class Tests : public TestCase
 
             wassert(actual(f2.ofd_setlk(lk2)).istrue());
         });
+
+        add_method("preserve_file_times", []() {
+            File test("test", O_RDWR | O_CREAT, 0666);
+            struct timespec ts[2] = { { 1500000000, 0 }, { 1500000000, 0 } };
+            test.futimens(ts);
+
+            {
+                PreserveFileTimes pt(test);
+                test.write("test", 4);
+            }
+
+            struct stat st;
+            test.fstat(st);
+
+            wassert(actual(st.st_atim.tv_sec) == 1500000000);
+            wassert(actual(st.st_atim.tv_nsec) == 0);
+            wassert(actual(st.st_mtim.tv_sec) == 1500000000);
+            wassert(actual(st.st_mtim.tv_nsec) == 0);
+        });
     }
 } test("sys");
 
