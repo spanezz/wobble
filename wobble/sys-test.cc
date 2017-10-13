@@ -97,6 +97,8 @@ class Tests : public TestCase
             write_file("foo/bar.txt", "bar");
             rmtree("foo");
             wassert(actual(exists("foo")).isfalse());
+
+            rmtree_ifexists("foo");
         });
 
         add_method("which", []() {
