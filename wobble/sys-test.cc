@@ -44,6 +44,9 @@ class Tests : public TestCase
             write_file_atomically("testfile", test);
             string test1 = read_file("testfile");
             wassert(actual(test1) == test);
+
+            write_file("testfile", "");
+            wassert(actual(read_file("testfile")) == "");
         });
 
         add_method("directory_iterate", []() {

@@ -800,6 +800,9 @@ std::string read_file(const std::string& file)
     struct stat st;
     in.fstat(st);
 
+    if (st.st_size == 0)
+        return std::string();
+
     // mmap the input file
     MMap src = in.mmap(st.st_size, PROT_READ, MAP_SHARED);
 
