@@ -235,6 +235,19 @@ class Tests : public TestCase
             wassert(actual(st.st_mtim.tv_sec) == 1500000000);
             wassert(actual(st.st_mtim.tv_nsec) == 0);
         });
+
+        add_method("touch", []() {
+            write_file("test", "foo");
+            touch("test", 123456);
+
+            struct stat st;
+            stat("test", st);
+
+            wassert(actual(st.st_atim.tv_sec) == 123456);
+            wassert(actual(st.st_atim.tv_nsec) == 0);
+            wassert(actual(st.st_mtim.tv_sec) == 123456);
+            wassert(actual(st.st_mtim.tv_nsec) == 0);
+        });
     }
 } test("sys");
 
