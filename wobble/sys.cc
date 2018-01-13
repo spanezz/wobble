@@ -791,6 +791,15 @@ File File::mkstemp(const std::string& prefix)
     return mkstemp(fbuf);
 }
 
+File File::mkstemp(const char* prefix)
+{
+    size_t prefix_size = strlen(prefix);
+    char* fbuf = (char*)alloca(prefix_size + 7);
+    memcpy(fbuf, prefix, prefix_size);
+    memcpy(fbuf + prefix_size, "XXXXXX", 7);
+    return mkstemp(fbuf);
+}
+
 File File::mkstemp(char* pathname_template)
 {
     int fd = ::mkstemp(pathname_template);
