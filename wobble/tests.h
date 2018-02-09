@@ -390,6 +390,10 @@ inline ActualFile actual_file(const std::string& pathname) { return ActualFile(p
         throw wobble::tests::TestFailed(e, __FILE__, __LINE__, #func, wobble_test_location_info); \
     } }()
 
+/**
+ * Fail a test with an error message
+ */
+#define wfail_test(msg) wassert(throw wobble::tests::TestFailed((msg)))
 
 struct TestCase;
 
