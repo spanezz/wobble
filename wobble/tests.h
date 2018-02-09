@@ -14,6 +14,7 @@
 #include <exception>
 #include <functional>
 #include <vector>
+#include <typeinfo>
 
 namespace wobble {
 namespace tests {
@@ -143,6 +144,13 @@ struct TestSkipped : public std::exception
     wobble::tests::LocationInfo wobble_test_location_info; \
     wobble::tests::LocationInfo& name = wobble_test_location_info
 
+
+/**
+ * The following assert_* functions throw TestFailed without capturing
+ * file/line numbers, and need to be used inside wassert to give good error
+ * messages. Do not use them in actual test cases, but you can use them to
+ * implement test assertions.
+ */
 
 /// Test function that ensures that the actual value is true
 template<typename A>
@@ -372,6 +380,24 @@ inline ActualFile actual_file(const std::string& pathname) { return ActualFile(p
 
 /// Shortcut to check that a given expression returns false
 #define wassert_false(...) wassert(actual(__VA_ARGS__).isfalse())
+
+/**
+ * Ensure that the expression throws the given exception.
+ *
+ * Returns a copy of the exception, which can be used for further evaluation.
+ */
+#define wassert_throws(exc, ...) \
+    [&]() { try { \
+        __VA_ARGS__ ; \
+        wfail_test(#__VA_ARGS__ " did not throw " #exc); \
+    } catch (exc& e) { \
+        return e; \
+    } catch (std::exception& e) { \
+        std::string msg(#__VA_ARGS__ " did not throw " #exc " but threw "); \
+        msg += typeid(e).name(); \
+        msg += " instead"; \
+        wfail_test(msg); \
+    } }()
 
 /**
  * Call a function returning its result, and raising TestFailed with the

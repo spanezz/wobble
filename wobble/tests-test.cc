@@ -124,6 +124,11 @@ class Tests : public TestCase
         });
 
         add_method("empty_skipped");
+
+        add_method("throws", []{
+            auto e = wassert_throws(std::runtime_error, throw std::runtime_error("expected exception"));
+            wassert(actual(e.what()) == "expected exception");
+        });
     }
 } tests("tests");
 
