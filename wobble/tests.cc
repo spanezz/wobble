@@ -445,22 +445,30 @@ TestCaseResult TestCase::run_tests(TestController& controller)
         return res;
     }
 
+    bool skip_all = false;
     try {
         setup();
     } catch (TestSkipped) {
-        res.skipped = true;
-        controller.test_case_end(*this, res);
-        return res;
+        skip_all = true;
     } catch (std::exception& e) {
         res.set_setup_failed(e);
         controller.test_case_end(*this, res);
         return res;
     }
 
-    for (auto& m: methods)
+    if (skip_all)
     {
-        // TODO: filter on m.name
-        res.add_test_method(run_test(controller, m));
+        for (auto& method: methods)
+        {
+            TestMethodResult tmr(name, method.name);
+            controller.test_method_begin(method, tmr);
+            tmr.skipped = true;
+            controller.test_method_end(method, tmr);
+            res.add_test_method(move(tmr));
+        }
+    } else {
+        for (auto& m: methods)
+            res.add_test_method(run_test(controller, m));
     }
 
     try {

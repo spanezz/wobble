@@ -145,5 +145,22 @@ struct TestFixture : public FixtureTestCase<ValueFixture>
     }
 } tests1("tests_fixture");
 
+struct SkipFixture : public wobble::tests::Fixture
+{
+    SkipFixture() { throw TestSkipped(); }
+};
+
+struct TestSkipFixture : public FixtureTestCase<SkipFixture>
+{
+    using FixtureTestCase::FixtureTestCase;
+
+    void register_tests() override
+    {
+        add_method("fails", [](Fixture& f) {
+            wfail_test("This should never run");
+        });
+    }
+} tests2("tests_skipfixture");
+
 }
 
