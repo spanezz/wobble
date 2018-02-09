@@ -392,55 +392,6 @@ void ActualFile::startswith(const std::string& data) const
         throw TestFailed("file " + _actual + " starts with '" + str::encode_cstring(buf) + "' instead of '" + str::encode_cstring(data) + "'");
 }
 
-#if 0
-void test_assert_file_exists(WIBBLE_TEST_LOCPRM, const std::string& fname)
-{
-    if (not sys::fs::exists(fname))
-    {
-        std::stringstream ss;
-        ss << "file '" << fname << "' does not exists";
-        wobble_test_location.fail_test(ss.str());
-    }
-}
-
-void test_assert_not_file_exists(WIBBLE_TEST_LOCPRM, const std::string& fname)
-{
-    if (sys::fs::exists(fname))
-    {
-        std::stringstream ss;
-        ss << "file '" << fname << "' does exists";
-        wobble_test_location.fail_test(ss.str());
-    }
-}
-
-#if 0
-struct TestFileExists
-{
-    std::string pathname;
-    bool inverted;
-    TestFileExists(const std::string& pathname, bool inverted=false) : pathname(pathname), inverted(inverted) {}
-    TestFileExists operator!() { return TestFileExists(pathname, !inverted); }
-    void check(WOBBLE_TEST_LOCPRM) const;
-};
-#endif
-
-void TestFileExists::check(WIBBLE_TEST_LOCPRM) const
-{
-    if (!inverted)
-    {
-        if (sys::fs::exists(pathname)) return;
-        std::stringstream ss;
-        ss << "file '" << pathname << "' does not exists";
-        wobble_test_location.fail_test(ss.str());
-    } else {
-        if (not sys::fs::exists(pathname)) return;
-        std::stringstream ss;
-        ss << "file '" << pathname << "' exists";
-        wobble_test_location.fail_test(ss.str());
-    }
-}
-#endif
-
 TestRegistry& TestRegistry::get()
 {
     static TestRegistry* instance = 0;

@@ -845,19 +845,6 @@ public:
     }
 };
 
-#if 0
-    struct Test
-    {
-        std::string name;
-        std::function<void()> test_func;
-    };
-
-    /// Add tests to the test case
-    virtual void add_tests() {}
-#endif
-
-
 }
 }
-
 #endif
