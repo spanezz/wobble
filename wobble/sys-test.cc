@@ -85,6 +85,18 @@ class Tests : public TestCase
             wassert(actual(dir.faccessat("wobble_unit_test_file_expected_not_to_be_there", F_OK)).isfalse());
         });
 
+        add_method("openat_ifexists", []() {
+            Path dir("/etc", O_DIRECTORY);
+
+            int fd = dir.openat_ifexists("passwd", O_RDONLY);
+            wassert(actual(fd) != -1);
+            ::close(fd);
+
+            fd = dir.openat_ifexists("does-not-exist-really", O_RDONLY);
+            wassert(actual(fd) == -1);
+        });
+
+
         add_method("makedirs", []() {
             wassert(actual(makedirs("makedirs/foo/bar/baz")).istrue());
             wassert(actual(isdir("makedirs/foo/bar/baz")).istrue());
