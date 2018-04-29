@@ -103,6 +103,10 @@ class Tests : public TestCase
             wassert(actual("foo") > string("bar"));
             wassert(actual("foo") >= string("foo"));
             wassert(actual("foo") >= string("bar"));
+
+            std::vector<uint8_t> buf;
+            buf.push_back('a'); buf.push_back('b'); buf.push_back('c');
+            wassert(actual(buf) == "abc");
         });
 
         add_method("function", []() {

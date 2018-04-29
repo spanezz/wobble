@@ -336,6 +336,7 @@ inline Actual<A> actual(const A& actual) { return Actual<A>(actual); }
 inline ActualCString actual(const char* actual) { return ActualCString(actual); }
 inline ActualCString actual(char* actual) { return ActualCString(actual); }
 inline ActualStdString actual(const std::string& actual) { return ActualStdString(actual); }
+inline ActualStdString actual(const std::vector<uint8_t>& actual) { return ActualStdString(std::string(actual.begin(), actual.end())); }
 inline ActualDouble actual(double actual) { return ActualDouble(actual); }
 
 struct ActualFunction : public Actual<std::function<void()>>
