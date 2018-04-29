@@ -315,6 +315,10 @@ struct ActualStdString : public Actual<std::string>
 {
     ActualStdString(const std::string& s) : Actual<std::string>(s) {}
 
+    using Actual<std::string>::operator==;
+    void operator==(const std::vector<uint8_t>& expected) const;
+    using Actual<std::string>::operator!=;
+    void operator!=(const std::vector<uint8_t>& expected) const;
     void startswith(const std::string& expected) const;
     void endswith(const std::string& expected) const;
     void contains(const std::string& expected) const;

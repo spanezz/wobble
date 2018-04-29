@@ -107,6 +107,7 @@ class Tests : public TestCase
             std::vector<uint8_t> buf;
             buf.push_back('a'); buf.push_back('b'); buf.push_back('c');
             wassert(actual(buf) == "abc");
+            wassert(actual(string("abc")) == buf);
         });
 
         add_method("function", []() {
