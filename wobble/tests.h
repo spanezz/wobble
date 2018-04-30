@@ -134,6 +134,10 @@ struct TestFailed : public std::exception
  */
 struct TestSkipped : public std::exception
 {
+    std::string reason;
+
+    TestSkipped();
+    TestSkipped(const std::string& reason);
 };
 
 /**
@@ -452,6 +456,9 @@ struct TestMethodResult
 
     /// True if the test has been skipped
     bool skipped = false;
+
+    /// If the test has been skipped, this is an optional reason
+    std::string skipped_reason;
 
 
     TestMethodResult(const std::string& test_case, const std::string& test_method)
