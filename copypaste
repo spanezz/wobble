@@ -1,8 +1,8 @@
 #!/usr/bin/python3
-# coding: utf-8
 
 import argparse
 import os
+
 
 class Copypaste:
     def __init__(self, namespace, subdir):
@@ -20,7 +20,6 @@ class Copypaste:
             ns_components = self.namespace.split("::")
             ns_open = "".join("namespace {} {{\n".format(x) for x in ns_components).encode("utf-8")
             ns_close = "".join("\n}" for x in range(len(ns_components) + 1)).encode("utf-8")
-
 
         # Replace namespace and const names
         if self.namespace:
@@ -44,8 +43,10 @@ class Copypaste:
                 destpath = os.path.join(destdir, os.path.relpath(root, srcdir))
 
             for fn in filenames:
-                if fn.endswith("-test.cc"): continue
-                if not fn.endswith(".h") and not fn.endswith(".cc"): continue
+                if fn.endswith("-test.cc"):
+                    continue
+                if not fn.endswith(".h") and not fn.endswith(".cc"):
+                    continue
                 os.makedirs(destpath, exist_ok=True)
 
                 with open(os.path.join(root, fn), "rb") as fd:
@@ -55,6 +56,7 @@ class Copypaste:
 
                 with open(os.path.join(destpath, fn), "wb") as fd:
                     fd.write(buf)
+
 
 def main():
     parser = argparse.ArgumentParser(description="Create a copy of wobble for inclusion into a different project.")
@@ -66,6 +68,7 @@ def main():
 
     copypaste = Copypaste(args.namespace, args.subdir)
     copypaste.generate("wobble", args.destdir)
+
 
 if __name__ == "__main__":
     main()
