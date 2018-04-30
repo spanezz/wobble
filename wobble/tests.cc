@@ -613,5 +613,78 @@ void SimpleTestController::test_method_end(const TestMethod& test_method, const 
     fflush(stdout);
 }
 
+
+/*
+ * TestResultStats
+ */
+
+TestResultStats::TestResultStats(const std::vector<TestCaseResult>& results)
+    : results(results)
+{
+    for (const auto& tc_res: results)
+    {
+        if (!tc_res.fail_setup.empty())
+            ++test_cases_failed;
+        else {
+            if (!tc_res.fail_teardown.empty())
+                ++test_cases_failed;
+            else
+                ++test_cases_ok;
+
+            for (const auto& tm_res: tc_res.methods)
+            {
+                if (tm_res.skipped)
+                    ++methods_skipped;
+                else if (tm_res.is_success())
+                    ++methods_ok;
+                else
+                    ++methods_failed;
+            }
+        }
+    }
+
+    success = methods_ok && !test_cases_failed && !methods_failed;
+}
+
+void TestResultStats::print_results(FILE* out)
+{
+    for (const auto& tc_res: results)
+    {
+        if (!tc_res.fail_setup.empty())
+            fprintf(stderr, "%s: %s\n", tc_res.test_case.c_str(), tc_res.fail_setup.c_str());
+        else {
+            if (!tc_res.fail_teardown.empty())
+                fprintf(stderr, "%s: %s\n", tc_res.test_case.c_str(), tc_res.fail_teardown.c_str());
+
+            for (const auto& tm_res: tc_res.methods)
+            {
+                if (tm_res.skipped || tm_res.is_success()) continue;
+                fprintf(stderr, "\n");
+                if (tm_res.exception_typeid.empty())
+                    fprintf(stderr, "%s.%s: %s\n", tm_res.test_case.c_str(), tm_res.test_method.c_str(), tm_res.error_message.c_str());
+                else
+                    fprintf(stderr, "%s.%s:[%s] %s\n", tm_res.test_case.c_str(), tm_res.test_method.c_str(), tm_res.exception_typeid.c_str(), tm_res.error_message.c_str());
+                for (const auto& frame : tm_res.error_stack)
+                    fprintf(stderr, "  %s", frame.format().c_str());
+            }
+        }
+    }
+}
+
+void TestResultStats::print_stats(FILE* out)
+{
+    if (test_cases_failed)
+        fprintf(stderr, "%u/%u test cases had issues initializing or cleaning up\n",
+                test_cases_failed, test_cases_ok + test_cases_failed);
+
+    if (methods_failed)
+        fprintf(stderr, "%u/%u tests failed\n", methods_failed, methods_ok + methods_failed);
+
+    if (methods_skipped)
+        fprintf(stderr, "%u tests skipped\n", methods_skipped);
+
+    fprintf(stderr, "%u tests succeeded\n", methods_ok);
+}
+
 }
 }
