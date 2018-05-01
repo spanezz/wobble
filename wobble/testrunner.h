@@ -78,6 +78,8 @@ struct TestMethodResult
     {
         return error_message.empty();
     }
+
+    void print_failure_details(FILE* out) const;
 };
 
 /**
@@ -172,6 +174,7 @@ struct TestController
     virtual void test_method_end(const TestMethod& test_method, const TestMethodResult& test_method_result) {}
 };
 
+
 /**
  * Simple default implementation of TestController.
  *
@@ -180,6 +183,35 @@ struct TestController
  */
 struct SimpleTestController : public TestController
 {
+    /// Output stream
+    FILE* output = stdout;
+
+    /// Any method not matching this glob expression will not be run
+    std::string whitelist;
+
+    /// Any method matching this glob expression will not be run
+    std::string blacklist;
+
+    bool test_case_begin(const TestCase& test_case, const TestCaseResult& test_case_result) override;
+    void test_case_end(const TestCase& test_case, const TestCaseResult& test_case_result) override;
+    bool test_method_begin(const TestMethod& test_method, const TestMethodResult& test_method_result) override;
+    void test_method_end(const TestMethod& test_method, const TestMethodResult& test_method_result) override;
+
+    bool test_method_should_run(const std::string& fullname) const;
+};
+
+
+/**
+ * Verbose implementation of TestController.
+ *
+ * It does progress printing to stdout and basic glob-based test method
+ * filtering.
+ */
+struct VerboseTestController : public TestController
+{
+    /// Output stream
+    FILE* output = stdout;
+
     /// Any method not matching this glob expression will not be run
     std::string whitelist;
 
