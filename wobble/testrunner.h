@@ -174,6 +174,21 @@ struct TestController
     virtual void test_method_end(const TestMethod& test_method, const TestMethodResult& test_method_result) {}
 };
 
+/**
+ * Test controller that filters tests via a blacklist/whitelist system
+ * containing glob patterns on testcase.testmethod names
+ */
+struct FilteringTestController : public TestController
+{
+    /// Any method not matching this glob expression will not be run
+    std::string whitelist;
+
+    /// Any method matching this glob expression will not be run
+    std::string blacklist;
+
+    bool test_method_should_run(const std::string& fullname) const;
+};
+
 
 /**
  * Simple default implementation of TestController.
@@ -181,23 +196,15 @@ struct TestController
  * It does progress printing to stdout and basic glob-based test method
  * filtering.
  */
-struct SimpleTestController : public TestController
+struct SimpleTestController : public FilteringTestController
 {
     /// Output stream
     FILE* output = stdout;
-
-    /// Any method not matching this glob expression will not be run
-    std::string whitelist;
-
-    /// Any method matching this glob expression will not be run
-    std::string blacklist;
 
     bool test_case_begin(const TestCase& test_case, const TestCaseResult& test_case_result) override;
     void test_case_end(const TestCase& test_case, const TestCaseResult& test_case_result) override;
     bool test_method_begin(const TestMethod& test_method, const TestMethodResult& test_method_result) override;
     void test_method_end(const TestMethod& test_method, const TestMethodResult& test_method_result) override;
-
-    bool test_method_should_run(const std::string& fullname) const;
 };
 
 
@@ -207,23 +214,15 @@ struct SimpleTestController : public TestController
  * It does progress printing to stdout and basic glob-based test method
  * filtering.
  */
-struct VerboseTestController : public TestController
+struct VerboseTestController : public FilteringTestController
 {
     /// Output stream
     FILE* output = stdout;
-
-    /// Any method not matching this glob expression will not be run
-    std::string whitelist;
-
-    /// Any method matching this glob expression will not be run
-    std::string blacklist;
 
     bool test_case_begin(const TestCase& test_case, const TestCaseResult& test_case_result) override;
     void test_case_end(const TestCase& test_case, const TestCaseResult& test_case_result) override;
     bool test_method_begin(const TestMethod& test_method, const TestMethodResult& test_method_result) override;
     void test_method_end(const TestMethod& test_method, const TestMethodResult& test_method_result) override;
-
-    bool test_method_should_run(const std::string& fullname) const;
 };
 
 

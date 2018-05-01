@@ -439,7 +439,7 @@ TestCaseResult TestCase::run_tests(TestController& controller)
         return res;
     }
 
-    bool skip_all;
+    bool skip_all = false;
     string skip_all_reason;
     try {
         setup();

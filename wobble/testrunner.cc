@@ -37,10 +37,10 @@ void TestMethodResult::print_failure_details(FILE* out) const
 
 
 /*
- * SimpleTestController
+ * FilteringTestController
  */
 
-bool SimpleTestController::test_method_should_run(const std::string& fullname) const
+bool FilteringTestController::test_method_should_run(const std::string& fullname) const
 {
     if (!whitelist.empty() && fnmatch(whitelist.c_str(), fullname.c_str(), 0) == FNM_NOMATCH)
         return false;
@@ -50,6 +50,11 @@ bool SimpleTestController::test_method_should_run(const std::string& fullname) c
 
     return true;
 }
+
+
+/*
+ * SimpleTestController
+ */
 
 bool SimpleTestController::test_case_begin(const TestCase& test_case, const TestCaseResult& test_case_result)
 {
@@ -97,17 +102,6 @@ void SimpleTestController::test_method_end(const TestMethod& test_method, const 
  * VerboseTestController
  */
 
-bool VerboseTestController::test_method_should_run(const std::string& fullname) const
-{
-    if (!whitelist.empty() && fnmatch(whitelist.c_str(), fullname.c_str(), 0) == FNM_NOMATCH)
-        return false;
-
-    if (!blacklist.empty() && fnmatch(blacklist.c_str(), fullname.c_str(), 0) != FNM_NOMATCH)
-        return false;
-
-    return true;
-}
-
 bool VerboseTestController::test_case_begin(const TestCase& test_case, const TestCaseResult& test_case_result)
 {
     // Skip test case if all its methods should not run
@@ -123,11 +117,11 @@ bool VerboseTestController::test_case_begin(const TestCase& test_case, const Tes
 void VerboseTestController::test_case_end(const TestCase& test_case, const TestCaseResult& test_case_result)
 {
     if (test_case_result.skipped)
-        fprintf(output, "%s: skipped.\n", test_case.name.c_str());
+        ;
     else if (test_case_result.is_success())
-        fprintf(output, "%s: success.\n", test_case.name.c_str());
+        fprintf(output, "%s: ✔\n", test_case.name.c_str());
     else
-        fprintf(output, "%s: failed.\n", test_case.name.c_str());
+        fprintf(output, "%s: ✘\n", test_case.name.c_str());
 }
 
 bool VerboseTestController::test_method_begin(const TestMethod& test_method, const TestMethodResult& test_method_result)
@@ -146,10 +140,10 @@ void VerboseTestController::test_method_end(const TestMethod& test_method, const
             fprintf(output, "%s.%s: skipped: %s\n", test_method_result.test_case.c_str(), test_method.name.c_str(), test_method_result.skipped_reason.c_str());
     }
     else if (test_method_result.is_success())
-        fprintf(output, "%s.%s: success.\n", test_method_result.test_case.c_str(), test_method.name.c_str());
+        fprintf(output, "%s.%s: ✔\n", test_method_result.test_case.c_str(), test_method.name.c_str());
     else
     {
-        fprintf(output, "%s.%s: failed:\n", test_method_result.test_case.c_str(), test_method.name.c_str());
+        fprintf(output, "%s.%s: ✘\n", test_method_result.test_case.c_str(), test_method.name.c_str());
         test_method_result.print_failure_details(output);
     }
 }
