@@ -41,6 +41,9 @@ struct TestMethodResult
     /// If the test has been skipped, this is an optional reason
     std::string skipped_reason;
 
+    /// Time in nanoseconds it took the test to run
+    unsigned long long elapsed_ns = 0;
+
 
     TestMethodResult(const std::string& test_case, const std::string& test_method)
         : test_case(test_case), test_method(test_method) {}
@@ -136,6 +139,8 @@ struct TestCaseResult
                 return false;
         return true;
     }
+
+    unsigned long long elapsed_ns() const;
 };
 
 

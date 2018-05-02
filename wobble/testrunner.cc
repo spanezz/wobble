@@ -32,6 +32,19 @@ void TestMethodResult::print_failure_details(FILE* out) const
 
 
 /*
+ * TestCaseResult
+ */
+
+unsigned long long TestCaseResult::elapsed_ns() const
+{
+    unsigned long long res = 0;
+    for (const auto tmr: methods)
+        res += tmr.elapsed_ns;
+    return res;
+}
+
+
+/*
  * FilteringTestController
  */
 
@@ -97,6 +110,18 @@ void SimpleTestController::test_method_end(const TestMethod& test_method, const 
  * VerboseTestController
  */
 
+static void format_elapsed(char* buf, size_t size, unsigned long long elapsed_ns)
+{
+    if (elapsed_ns < 1000)
+        snprintf(buf, size, "%lluns", elapsed_ns);
+    else if (elapsed_ns < 1000000)
+        snprintf(buf, size, "%lluµs", elapsed_ns / 1000);
+    else if (elapsed_ns < 1000000000)
+        snprintf(buf, size, "%llums", elapsed_ns / 1000000);
+    else
+        snprintf(buf, size, "%.2fs", (double)(elapsed_ns / 1000000) / 1000.0);
+}
+
 bool VerboseTestController::test_case_begin(const TestCase& test_case, const TestCaseResult& test_case_result)
 {
     // Skip test case if all its methods should not run
@@ -112,11 +137,14 @@ bool VerboseTestController::test_case_begin(const TestCase& test_case, const Tes
 void VerboseTestController::test_case_end(const TestCase& test_case, const TestCaseResult& test_case_result)
 {
     if (test_case_result.skipped)
-        ;
-    else if (test_case_result.is_success())
-        fprintf(output, "%s: ✔\n", test_case.name.c_str());
+        return;
+
+    char elapsed[32];
+    format_elapsed(elapsed, 32, test_case_result.elapsed_ns());
+    if (test_case_result.is_success())
+        fprintf(output, "%s: ✔ (%s)\n", test_case.name.c_str(), elapsed);
     else
-        fprintf(output, "%s: ✘\n", test_case.name.c_str());
+        fprintf(output, "%s: ✘ (%s)\n", test_case.name.c_str(), elapsed);
 }
 
 bool VerboseTestController::test_method_begin(const TestMethod& test_method, const TestMethodResult& test_method_result)
@@ -127,6 +155,9 @@ bool VerboseTestController::test_method_begin(const TestMethod& test_method, con
 
 void VerboseTestController::test_method_end(const TestMethod& test_method, const TestMethodResult& test_method_result)
 {
+    char elapsed[32];
+    format_elapsed(elapsed, 32, test_method_result.elapsed_ns);
+
     if (test_method_result.skipped)
     {
         if (test_method_result.skipped_reason.empty())
@@ -135,10 +166,10 @@ void VerboseTestController::test_method_end(const TestMethod& test_method, const
             fprintf(output, "%s.%s: skipped: %s\n", test_method_result.test_case.c_str(), test_method.name.c_str(), test_method_result.skipped_reason.c_str());
     }
     else if (test_method_result.is_success())
-        fprintf(output, "%s.%s: ✔\n", test_method_result.test_case.c_str(), test_method.name.c_str());
+        fprintf(output, "%s.%s: ✔ (%s)\n", test_method_result.test_case.c_str(), test_method.name.c_str(), elapsed);
     else
     {
-        fprintf(output, "%s.%s: ✘\n", test_method_result.test_case.c_str(), test_method.name.c_str());
+        fprintf(output, "%s.%s: ✘ (%s)\n", test_method_result.test_case.c_str(), test_method.name.c_str(), elapsed);
         test_method_result.print_failure_details(output);
     }
 }
