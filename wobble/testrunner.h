@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <memory>
 
 namespace wobble {
 namespace tests {
@@ -29,7 +30,7 @@ struct TestMethodResult
     std::string error_message;
 
     /// Stack frame of where the error happened
-    TestStack* error_stack = nullptr;
+    std::shared_ptr<TestStack> error_stack;
 
     /// If non-empty, the test threw an exception and this is its type ID
     std::string exception_typeid;
@@ -43,7 +44,6 @@ struct TestMethodResult
 
     TestMethodResult(const std::string& test_case, const std::string& test_method)
         : test_case(test_case), test_method(test_method) {}
-    ~TestMethodResult();
 
     void set_failed(TestFailed& e);
 

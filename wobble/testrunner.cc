@@ -12,15 +12,10 @@ namespace tests {
  * TestMethodResult
  */
 
-TestMethodResult::~TestMethodResult()
-{
-    delete error_stack;
-}
-
 void TestMethodResult::set_failed(TestFailed& e)
 {
     error_message = e.what();
-    error_stack = new TestStack(e.stack);
+    error_stack = make_shared<TestStack>(e.stack);
     if (error_message.empty())
         error_message = "test failed with an empty error message";
 }
