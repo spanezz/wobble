@@ -410,6 +410,40 @@ void ActualFile::startswith(const std::string& data) const
         throw TestFailed("file " + _actual + " starts with '" + str::encode_cstring(buf) + "' instead of '" + str::encode_cstring(data) + "'");
 }
 
+void ActualFile::contents_equal(const std::string& data) const
+{
+    std::string content = sys::read_file(_actual);
+    if (content != data)
+        throw TestFailed("file " + _actual + " contains '" + str::encode_cstring(content) + "' instead of '" + str::encode_cstring(data) + "'");
+}
+
+void ActualFile::contents_equal(const std::vector<uint8_t>& data) const
+{
+    return contents_equal(std::string(data.begin(), data.end()));
+}
+
+void ActualFile::contents_equal(const std::initializer_list<std::string>& lines) const
+{
+    std::vector<std::string> actual_lines;
+    std::string content = str::rstrip(sys::read_file(_actual));
+
+    str::Split splitter(content, "\n");
+    std::copy(splitter.begin(), splitter.end(), back_inserter(actual_lines));
+
+    if (actual_lines.size() != lines.size())
+        throw TestFailed("file " + _actual + " contains " + std::to_string(actual_lines.size()) + " lines ('" + str::encode_cstring(content) + "') instead of " + std::to_string(lines.size()) + "lines ('" + str::encode_cstring(content) + "')");
+
+    auto ai = actual_lines.begin();
+    auto ei = lines.begin();
+    for (unsigned i = 0; i < actual_lines.size(); ++i, ++ai, ++ei)
+    {
+        string actual_line = str::rstrip(*ai);
+        string expected_line = str::rstrip(*ei);
+        if (*ai != *ei)
+            throw TestFailed("file " + _actual + " actual contents differ from expected at line #" + std::to_string(i + 1) + " ('" + str::encode_cstring(actual_line) + "' instead of '" + str::encode_cstring(expected_line) + "')");
+
+    }
+}
 
 /*
  * TestCase

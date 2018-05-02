@@ -362,6 +362,9 @@ struct ActualFile : public Actual<std::string>
     void exists() const;
     void not_exists() const;
     void startswith(const std::string& data) const;
+    void contents_equal(const std::string& data) const;
+    void contents_equal(const std::vector<uint8_t>& data) const;
+    void contents_equal(const std::initializer_list<std::string>& lines) const;
 };
 
 inline ActualFile actual_file(const std::string& pathname) { return ActualFile(pathname); }

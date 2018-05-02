@@ -126,6 +126,15 @@ class Tests : public TestCase
             wassert(actual_file("testfile").startswith("f"));
             wassert(actual_file("testfile").startswith("fo"));
             wassert(actual_file("testfile").startswith("foo"));
+            wassert(actual_file("testfile").contents_equal("foo"));
+            std::vector<uint8_t> data;
+            data.push_back('f');
+            data.push_back('o');
+            data.push_back('o');
+            wassert(actual_file("testfile").contents_equal(data));
+
+            sys::write_file("testfile", "foo\nbar\n");
+            wassert(actual_file("testfile").contents_equal({"foo", "bar"}));
         });
 
         add_method("empty_skipped");
