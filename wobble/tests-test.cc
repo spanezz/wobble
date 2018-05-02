@@ -115,7 +115,7 @@ class Tests : public TestCase
         });
 
         add_method("skip", []() {
-            throw TestSkipped();
+            throw TestSkipped("This method is intentionally skipped");
         });
 
         add_method("file", []() {
@@ -157,7 +157,7 @@ struct TestFixture : public FixtureTestCase<ValueFixture>
 
 struct SkipFixture : public wobble::tests::Fixture
 {
-    SkipFixture() { throw TestSkipped(); }
+    SkipFixture() { throw TestSkipped("This test case is intentionally skipped"); }
 };
 
 struct TestSkipFixture : public FixtureTestCase<SkipFixture>
