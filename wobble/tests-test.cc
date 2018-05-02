@@ -119,6 +119,11 @@ class Tests : public TestCase
         });
 
         add_method("file", []() {
+            sys::write_file("testfile", "");
+            wassert(actual_file("testfile").empty());
+            wassert(actual_file("testfile").contents_equal(""));
+            wassert(actual_file("testfile").contents_equal(std::vector<uint8_t>()));
+
             sys::write_file("testfile", "foo");
             wassert(actual_file("testfile").exists());
             wassert(actual_file("testfile-foobarbaz").not_exists());
@@ -126,15 +131,21 @@ class Tests : public TestCase
             wassert(actual_file("testfile").startswith("f"));
             wassert(actual_file("testfile").startswith("fo"));
             wassert(actual_file("testfile").startswith("foo"));
+            wassert(actual_file("testfile").not_empty());
             wassert(actual_file("testfile").contents_equal("foo"));
             std::vector<uint8_t> data;
             data.push_back('f');
             data.push_back('o');
             data.push_back('o');
             wassert(actual_file("testfile").contents_equal(data));
+            wassert(actual_file("testfile").contents_match("^f.+o$"));
 
             sys::write_file("testfile", "foo\nbar\n");
             wassert(actual_file("testfile").contents_equal({"foo", "bar"}));
+            wassert(actual_file("testfile").contents_match({"^foo", "bar$"}));
+            wassert(actual_file("testfile").contents_match({"^foo", "(maybe)?", "bar$"}));
+            wassert(actual_file("testfile").contents_match({"^foo", "bar$", "(maybe)?"}));
+            wassert(actual_file("testfile").contents_match({"(maybe)?", "^foo", "bar$"}));
         });
 
         add_method("empty_skipped");
