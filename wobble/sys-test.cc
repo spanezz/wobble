@@ -2,6 +2,7 @@
 #include "sys.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <cstring>
 #include <set>
@@ -287,6 +288,30 @@ class Tests : public TestCase
             begin.tv_sec = 100; begin.tv_nsec = 5;
             until.tv_sec = 100; until.tv_nsec = 4;
             wassert(actual(timesec_elapsed(begin, until)) == 0u);
+        });
+
+        add_method("rlimit", []() {
+            pid_t pid = fork();
+            int status;
+            if (pid == 0) exit(0);
+            wassert(actual(pid) > 0);
+            waitpid(pid, &status, 0);
+            wassert(actual(status) == 0);
+
+            {
+                OverrideRlimit ov(RLIMIT_NPROC, 0);
+
+                pid = fork();
+                if (pid == 0) exit(0);
+                wassert(actual(pid) == -1);
+                wassert(actual(errno) == EAGAIN);
+            }
+
+            pid = fork();
+            if (pid == 0) exit(0);
+            wassert(actual(pid) > 0);
+            waitpid(pid, &status, 0);
+            wassert(actual(status) == 0);
         });
     }
 } test("sys");
