@@ -260,6 +260,34 @@ class Tests : public TestCase
             wassert(actual(st.st_mtim.tv_sec) == 123456);
             wassert(actual(st.st_mtim.tv_nsec) == 0);
         });
+
+        add_method("timespec_elapsed", []() {
+            struct ::timespec begin, until;
+
+            begin.tv_sec = 100; begin.tv_nsec = 50;
+            until.tv_sec = 100; until.tv_nsec = 60;
+            wassert(actual(timesec_elapsed(begin, until)) == 10u);
+
+            begin.tv_sec = 100; begin.tv_nsec = 50;
+            until.tv_sec = 101; until.tv_nsec = 40;
+            wassert(actual(timesec_elapsed(begin, until)) == 1000000000u - 10u);
+
+            begin.tv_sec = 100; begin.tv_nsec = 50;
+            until.tv_sec = 101; until.tv_nsec = 60;
+            wassert(actual(timesec_elapsed(begin, until)) == 1000000000u + 10u);
+
+            begin.tv_sec = 100; begin.tv_nsec = 0;
+            until.tv_sec = 101; until.tv_nsec = 0;
+            wassert(actual(timesec_elapsed(begin, until)) == 1000000000u);
+
+            begin.tv_sec = 101; begin.tv_nsec = 0;
+            until.tv_sec = 100; until.tv_nsec = 0;
+            wassert(actual(timesec_elapsed(begin, until)) == 0u);
+
+            begin.tv_sec = 100; begin.tv_nsec = 5;
+            until.tv_sec = 100; until.tv_nsec = 4;
+            wassert(actual(timesec_elapsed(begin, until)) == 0u);
+        });
     }
 } test("sys");
 
