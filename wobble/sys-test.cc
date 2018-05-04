@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <cstring>
 #include <set>
-//#include <unistd.h>
+#include <unistd.h>
 
 using namespace std;
 using namespace wobble::sys;
@@ -291,27 +291,32 @@ class Tests : public TestCase
         });
 
         add_method("rlimit", []() {
-            pid_t pid = fork();
-            int status;
-            if (pid == 0) exit(0);
-            wassert(actual(pid) > 0);
-            waitpid(pid, &status, 0);
-            wassert(actual(status) == 0);
+            File fd("testfile", O_WRONLY | O_CREAT | O_TRUNC);
+
+            struct rlimit rlim_pre;
+            getrlimit(RLIMIT_NOFILE, rlim_pre);
 
             {
-                OverrideRlimit ov(RLIMIT_NPROC, 0);
+                OverrideRlimit ov(RLIMIT_NOFILE, 0);
+                struct rlimit rlim_cur;
+                getrlimit(RLIMIT_NOFILE, rlim_cur);
+                wassert(actual(rlim_cur.rlim_max) == rlim_pre.rlim_max);
+                wassert(actual(rlim_cur.rlim_cur) == 0u);
 
-                pid = fork();
-                if (pid == 0) exit(0);
-                wassert(actual(pid) == -1);
-                wassert(actual(errno) == EAGAIN);
+                int dupfd = ::dup(fd);
+                if (dupfd != -1) ::close(dupfd);
+                wassert(actual(dupfd == -1));
+                wassert(actual(errno) == EMFILE);
             }
 
-            pid = fork();
-            if (pid == 0) exit(0);
-            wassert(actual(pid) > 0);
-            waitpid(pid, &status, 0);
-            wassert(actual(status) == 0);
+            struct rlimit rlim_post;
+            getrlimit(RLIMIT_NOFILE, rlim_post);
+            wassert(actual(rlim_post.rlim_max) == rlim_pre.rlim_max);
+            wassert(actual(rlim_post.rlim_cur) == rlim_pre.rlim_cur);
+
+            int dupfd = ::dup(fd);
+            if (dupfd != -1) ::close(dupfd);
+            wassert(actual(dupfd >= 0));
         });
     }
 } test("sys");
