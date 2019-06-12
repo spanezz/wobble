@@ -1,7 +1,9 @@
 #include "tests.h"
 #include "subprocess.h"
+#include "sys.h"
 
 using namespace std;
+using namespace wobble;
 using namespace wobble::subprocess;
 using namespace wobble::tests;
 
@@ -54,6 +56,32 @@ add_method("false", []() {
     wassert_true(cmd_false.terminated());
 
     wassert(actual(cmd_false.returncode()) == 1);
+});
+
+add_method("stdout", []() {
+    Popen cmd_wc;
+    cmd_wc.args.push_back("wc");
+    cmd_wc.args.push_back("-c");
+
+    cmd_wc.stdin(Redirect::PIPE);
+    cmd_wc.stdout(Redirect::PIPE);
+
+    cmd_wc.fork();
+
+    sys::NamedFileDescriptor in(cmd_wc.stdin(), "stdin");
+    sys::NamedFileDescriptor out(cmd_wc.stdout(), "stdout");
+
+    in.write("test\n", 5);
+    in.close();
+
+    char buf[64];
+    size_t len = out.read(buf, 64);
+
+    string read(buf, len);
+    cmd_wc.wait();
+    wassert(actual(cmd_wc.returncode()) == 0);
+
+    wassert(actual(read) == "5\n");
 });
 
 }
