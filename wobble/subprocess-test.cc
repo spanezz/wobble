@@ -63,13 +63,13 @@ add_method("stdout", []() {
     cmd_wc.args.push_back("wc");
     cmd_wc.args.push_back("-c");
 
-    cmd_wc.stdin(Redirect::PIPE);
-    cmd_wc.stdout(Redirect::PIPE);
+    cmd_wc.set_stdin(Redirect::PIPE);
+    cmd_wc.set_stdout(Redirect::PIPE);
 
     cmd_wc.fork();
 
-    sys::NamedFileDescriptor in(cmd_wc.stdin(), "stdin");
-    sys::NamedFileDescriptor out(cmd_wc.stdout(), "stdout");
+    sys::NamedFileDescriptor in(cmd_wc.get_stdin(), "stdin");
+    sys::NamedFileDescriptor out(cmd_wc.get_stdout(), "stdout");
 
     in.write("test\n", 5);
     in.close();
