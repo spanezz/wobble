@@ -372,6 +372,11 @@ void Child::terminate() { send_signal(SIGTERM); }
 void Child::kill() { send_signal(SIGKILL); }
 
 
+Popen::Popen(std::initializer_list<std::string> args)
+    : args(args)
+{
+}
+
 int Popen::main() noexcept
 {
     try {

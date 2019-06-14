@@ -94,7 +94,13 @@ public:
     /// Request to redirect the child stderr according to val
     void set_stderr(Redirect val);
 
+    Child() = default;
+    Child(const Child&) = delete;
+    Child(Child&&) = delete;
     virtual ~Child();
+
+    Child& operator=(const Child&) = delete;
+    Child& operator=(Child&&) = delete;
 
     /// Start the child process
     void fork();
@@ -141,6 +147,10 @@ public:
     std::string executable;
 
     // env=None
+
+    using Child::Child;
+
+    Popen(std::initializer_list<std::string> args);
 };
 
 
