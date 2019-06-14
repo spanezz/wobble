@@ -111,6 +111,24 @@ void Child::set_stderr(Redirect val)
     m_stderr_action = val;
 }
 
+void Child::close_stdin()
+{
+    close(m_stdin[1]);
+    m_stdin[1] = -1;
+}
+
+void Child::close_stdout()
+{
+    close(m_stdin[0]);
+    m_stdin[0] = -1;
+}
+
+void Child::close_stderr()
+{
+    close(m_stdin[0]);
+    m_stdin[0] = -1;
+}
+
 void Child::pre_fork()
 {
     switch (m_stdin_action)

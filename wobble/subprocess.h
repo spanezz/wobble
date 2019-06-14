@@ -94,6 +94,13 @@ public:
     /// Request to redirect the child stderr according to val
     void set_stderr(Redirect val);
 
+    /// Close the pipe to the child process stdin
+    void close_stdin();
+    /// Close the pipe from the child process stdout
+    void close_stdout();
+    /// Close the pipe from the child process stderr
+    void close_stderr();
+
     Child() = default;
     Child(const Child&) = delete;
     Child(Child&&) = delete;
