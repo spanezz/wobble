@@ -119,6 +119,34 @@ add_method("stdout_to_file", []() {
     wassert(actual(read) == "5\n");
 });
 
+add_method("stderr_to_stdout", []() {
+    Popen cmd_wc;
+    cmd_wc.args.push_back("ls");
+    cmd_wc.args.push_back("/nonexistent");
+
+    sys::File fd("test.out", O_RDWR | O_CREAT);
+
+    cmd_wc.set_stdin(Redirect::DEVNULL);
+    cmd_wc.set_stdout(fd);
+    cmd_wc.set_stderr(Redirect::STDOUT);
+
+    cmd_wc.fork();
+
+    wassert(actual(cmd_wc.get_stdin()) == -1);
+    wassert(actual(cmd_wc.get_stdout()) == -1);
+    wassert(actual(cmd_wc.get_stderr()) == -1);
+
+    cmd_wc.wait();
+    wassert(actual(cmd_wc.returncode()) == 2);
+
+    char buf[64];
+    fd.lseek(0);
+    size_t len = fd.read(buf, 64);
+    string read(buf, len);
+
+    wassert(actual(read).startswith("ls:"));
+});
+
 }
 
 }
