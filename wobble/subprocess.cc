@@ -387,10 +387,14 @@ int Popen::main() noexcept
         exec_args[args.size()] = nullptr;
 
         if (execvp(path, (char* const*)exec_args) == -1)
+        {
+            delete[] exec_args;
             throw std::system_error(
                     errno, std::system_category(),
                     "execvp failed");
+        }
 
+        delete[] exec_args;
         throw std::runtime_error("process flow continued after execvp did not fail");
     } catch (std::system_error& e) {
         fprintf(::stderr, "Child process setup failed: %s\n", e.what());
