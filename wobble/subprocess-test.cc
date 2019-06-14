@@ -68,6 +68,10 @@ add_method("stdout", []() {
 
     cmd_wc.fork();
 
+    wassert(actual(cmd_wc.get_stdin()) != -1);
+    wassert(actual(cmd_wc.get_stdout()) != -1);
+    wassert(actual(cmd_wc.get_stderr()) == -1);
+
     sys::NamedFileDescriptor in(cmd_wc.get_stdin(), "stdin");
     sys::NamedFileDescriptor out(cmd_wc.get_stdout(), "stdout");
 
@@ -80,6 +84,37 @@ add_method("stdout", []() {
     string read(buf, len);
     cmd_wc.wait();
     wassert(actual(cmd_wc.returncode()) == 0);
+
+    wassert(actual(read) == "5\n");
+});
+
+add_method("stdout_to_file", []() {
+    Popen cmd_wc;
+    cmd_wc.args.push_back("wc");
+    cmd_wc.args.push_back("-c");
+
+    sys::File fd("test.out", O_RDWR | O_CREAT);
+
+    cmd_wc.set_stdin(Redirect::PIPE);
+    cmd_wc.set_stdout(fd);
+
+    cmd_wc.fork();
+
+    wassert(actual(cmd_wc.get_stdin()) != -1);
+    wassert(actual(cmd_wc.get_stdout()) == -1);
+    wassert(actual(cmd_wc.get_stderr()) == -1);
+
+    sys::NamedFileDescriptor in(cmd_wc.get_stdin(), "stdin");
+    in.write("test\n", 5);
+    in.close();
+
+    cmd_wc.wait();
+    wassert(actual(cmd_wc.returncode()) == 0);
+
+    char buf[64];
+    fd.lseek(0);
+    size_t len = fd.read(buf, 64);
+    string read(buf, len);
 
     wassert(actual(read) == "5\n");
 });

@@ -74,11 +74,11 @@ public:
     /// If true, call setsid() in the child process
     bool start_new_session = false;
 
-    /// Return the file descriptor to the stdin pipe to the child process, if configured, else thrown an exception
+    /// Return the file descriptor to the stdin pipe to the child process, if configured, else -1
     int get_stdin() const;
-    /// Return the file descriptor to the stdout pipe from the child process, if configured, else thrown an exception
+    /// Return the file descriptor to the stdout pipe from the child process, if configured, else -1
     int get_stdout() const;
-    /// Return the file descriptor to the stderr pipe from the child process, if configured, else thrown an exception
+    /// Return the file descriptor to the stderr pipe from the child process, if configured, else -1
     int get_stderr() const;
 
     /// Request to redirect the child stdin to this given file descriptor
