@@ -357,13 +357,13 @@ bool Child::poll()
     return false;
 }
 
-void Child::wait()
+int Child::wait()
 {
     if (m_pid == 0)
         throw std::runtime_error("wait called before Child process was started");
 
     if (m_terminated)
-        return;
+        return returncode();
 
     pid_t res = waitpid(m_pid, &m_returncode, 0);
     if (res == -1)
@@ -372,6 +372,7 @@ void Child::wait()
                 "failed to waitpid(" + std::to_string(m_pid) + ")");
 
     m_terminated = true;
+    return returncode();
 }
 
 void Child::send_signal(int sig)
