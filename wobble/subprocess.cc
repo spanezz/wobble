@@ -119,14 +119,14 @@ void Child::close_stdin()
 
 void Child::close_stdout()
 {
-    close(m_stdin[0]);
-    m_stdin[0] = -1;
+    close(m_stdout[0]);
+    m_stdout[0] = -1;
 }
 
 void Child::close_stderr()
 {
-    close(m_stdin[0]);
-    m_stdin[0] = -1;
+    close(m_stderr[0]);
+    m_stderr[0] = -1;
 }
 
 void Child::pre_fork()
