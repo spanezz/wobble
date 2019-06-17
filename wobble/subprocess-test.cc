@@ -147,6 +147,42 @@ add_method("stderr_to_stdout", []() {
     wassert(actual(read).startswith("ls:"));
 });
 
+add_method("env_add", []() {
+    Popen cmd_env({"sh", "-c", "echo $TEST_VALUE"});
+    cmd_env.copy_env_from_parent();
+    cmd_env.setenv("TEST_VALUE", "testvalue");
+    cmd_env.set_stdout(Redirect::PIPE);
+    cmd_env.fork();
+
+    sys::NamedFileDescriptor out(cmd_env.get_stdout(), "stdout");
+    char buf[64];
+    size_t len = out.read(buf, 64);
+
+    string read(buf, len);
+    cmd_env.wait();
+    wassert(actual(cmd_env.returncode()) == 0);
+
+    wassert(actual(read) == "testvalue\n");
+});
+
+add_method("env_change", []() {
+    Popen cmd_env({"sh", "-c", "echo $USER"});
+    cmd_env.copy_env_from_parent();
+    cmd_env.setenv("USER", "testvalue");
+    cmd_env.set_stdout(Redirect::PIPE);
+    cmd_env.fork();
+
+    sys::NamedFileDescriptor out(cmd_env.get_stdout(), "stdout");
+    char buf[64];
+    size_t len = out.read(buf, 64);
+
+    string read(buf, len);
+    cmd_env.wait();
+    wassert(actual(cmd_env.returncode()) == 0);
+
+    wassert(actual(read) == "testvalue\n");
+});
+
 }
 
 }
