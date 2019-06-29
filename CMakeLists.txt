@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.2)
 
 include(FindDoxygen)
 set(VERSION "1.0")
-option(HAVE_TUT ON)
 if (NOT WIN32)
     add_definitions(-DPOSIX)
 endif()
