@@ -18,308 +18,313 @@ class Tests : public TestCase
 {
     using TestCase::TestCase;
 
-    void register_tests() override
-    {
-        add_method("isdir", []() {
-            system("rm -rf testdir");
-            wassert(actual(isdir("testdir")).isfalse());
-            system("touch testdir");
-            wassert(actual(isdir("testdir")).isfalse());
-            system("rm testdir; mkdir testdir");
-            wassert(actual(isdir("testdir")).istrue());
-        });
-
-        add_method("timestamp", []() {
-            using namespace wobble;
-            system("rm -f testfile");
-            wassert(actual(sys::timestamp("testfile", 0)) == 0);
-            write_file("testfile", "");
-            wassert(actual(sys::timestamp("testfile")) != 0);
-            wassert(actual(sys::timestamp("testfile", 0)) != 0);
-            unlink("testfile");
-            wassert(actual(sys::timestamp("testfile", 0)) == 0);
-        });
-
-        add_method("write_file_atomically", []() {
-            string test("ciao");
-            write_file_atomically("testfile", test);
-            string test1 = read_file("testfile");
-            wassert(actual(test1) == test);
-
-            write_file("testfile", "");
-            wassert(actual(read_file("testfile")) == "");
-        });
-
-        add_method("directory_iterate", []() {
-            Path dir("/", O_DIRECTORY);
-
-            set<string> files;
-            for (auto& i: dir)
-                files.insert(i.d_name);
-
-            wassert(actual(files.size()) > 0u);
-            wassert(actual(files.find(".") != files.end()).istrue());
-            wassert(actual(files.find("..") != files.end()).istrue());
-            wassert(actual(files.find("etc") != files.end()).istrue());
-            wassert(actual(files.find("bin") != files.end()).istrue());
-            wassert(actual(files.find("tmp") != files.end()).istrue());
-
-            // Check that the directory can be iterated twice in a row
-            files.clear();
-            for (auto& i: dir)
-                files.insert(i.d_name);
-
-            wassert(actual(files.size()) > 0u);
-            wassert(actual(files.find(".") != files.end()).istrue());
-            wassert(actual(files.find("..") != files.end()).istrue());
-            wassert(actual(files.find("etc") != files.end()).istrue());
-            wassert(actual(files.find("bin") != files.end()).istrue());
-            wassert(actual(files.find("tmp") != files.end()).istrue());
-
-            struct stat st;;
-            dir.fstatat("etc", st);
-            wassert(actual(S_ISDIR(st.st_mode)).istrue());
-
-            wassert(actual(dir.fstatat_ifexists("wobble_unit_test_file_expected_not_to_be_there", st)).isfalse());
-
-            wassert(actual(dir.faccessat("etc", X_OK)).istrue());
-            wassert(actual(dir.faccessat("wobble_unit_test_file_expected_not_to_be_there", F_OK)).isfalse());
-        });
-
-        add_method("openat_ifexists", []() {
-            Path dir("/etc", O_DIRECTORY);
-
-            int fd = dir.openat_ifexists("passwd", O_RDONLY);
-            wassert(actual(fd) != -1);
-            ::close(fd);
-
-            fd = dir.openat_ifexists("does-not-exist-really", O_RDONLY);
-            wassert(actual(fd) == -1);
-        });
-
-
-        add_method("makedirs", []() {
-            wassert(actual(makedirs("makedirs/foo/bar/baz")).istrue());
-            wassert(actual(isdir("makedirs/foo/bar/baz")).istrue());
-            wassert(actual(makedirs("makedirs/foo/bar/baz")).isfalse());
-            wassert(actual(isdir("makedirs/foo/bar/baz")).istrue());
-        });
-
-        add_method("rmtree", []() {
-            makedirs("foo/bar/baz");
-            makedirs("foo/bar/gnat");
-            write_file("foo/bar/baz.txt", "baz");
-            write_file("foo/bar/baz/gnat.txt", "gnat");
-            write_file("foo/bar.txt", "bar");
-            rmtree("foo");
-            wassert(actual(exists("foo")).isfalse());
-
-            rmtree_ifexists("foo");
-        });
-
-        add_method("which", []() {
-            wassert(actual(which("ls")).endswith("/bin/ls"));
-        });
-
-        add_method("unlink_ifexists", []() {
-            const char* fname = "test_unlink_ifexists";
-
-            unlink_ifexists(fname);
-            wassert(actual(unlink_ifexists(fname)).isfalse());
-            write_file(fname, "test");
-            wassert(actual(exists(fname)).istrue());
-            wassert(actual(unlink_ifexists(fname)).istrue());
-            wassert(actual(exists(fname)).isfalse());
-        });
-
-        add_method("rename_ifexists", []() {
-            const char* fname = "test_rename_ifexists";
-            const char* fname1 = "test_rename_ifexists1";
-
-            unlink_ifexists(fname);
-            unlink_ifexists(fname1);
-            wassert(actual(rename_ifexists(fname, fname1)).isfalse());
-
-            write_file(fname, "test");
-            wassert(actual(exists(fname)).istrue());
-            wassert(actual(exists(fname1)).isfalse());
-
-            wassert(actual(rename_ifexists(fname, fname1)).istrue());
-            wassert(actual(exists(fname)).isfalse());
-            wassert(actual(exists(fname1)).istrue());
-
-            unlink(fname1);
-        });
-
-        add_method("rename", []() {
-            const char* fname = "test_rename";
-            const char* fname1 = "test_rename1";
-
-            write_file(fname, "test");
-            rename(fname, fname1);
-            wassert(actual(exists(fname)).isfalse());
-            wassert(actual(exists(fname1)).istrue());
-            unlink(fname1);
-        });
-
-        add_method("file", []() {
-            File f("test", O_RDWR | O_CREAT, 0666);
-            wassert(actual(f.write("foo", 3)) == 3u);
-            wassert(actual(f.lseek(0)) == 0);
-            char buf[4];
-            wassert(actual(f.read(buf, 3)) == 3u);
-            buf[3] = 0;
-            wassert(actual(buf) == "foo");
-
-            wassert(actual(f.pwrite("ar", 2, 1)) == 2u);
-            wassert(actual(f.pread(buf, 3, 0)) == 3u);
-            wassert(actual(buf) == "far");
-
-            wassert(actual(f.pwrite(string("oz"), 1)) == 2u);
-            wassert(actual(f.pread(buf, 3, 0)) == 3u);
-            wassert(actual(buf) == "foz");
-
-            f.close();
-
-            wassert(actual(f.open_ifexists(O_RDONLY)));
-            f.close();
-
-            File f1("test-does-not-exists");
-            wassert(actual(f1.open_ifexists(O_RDONLY)).isfalse());
-        });
-
-        add_method("ofd_lock", []() {
-            File f1("test", O_RDWR | O_CREAT, 0666);
-            File f2("test", O_RDWR);
-
-            struct flock lk1;
-            memset(&lk1, 0, sizeof(lk1));
-            struct flock lk2;
-            memset(&lk2, 0, sizeof(lk2));
-
-            lk1.l_type = F_RDLCK;
-            lk1.l_whence = SEEK_SET;
-            lk1.l_start = 0;
-            lk1.l_len = 10;
-            wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
-
-            lk2.l_type = F_RDLCK;
-            lk2.l_whence = SEEK_SET;
-            lk2.l_start = 0;
-            lk2.l_len = 10;
-            wassert(actual(f2.ofd_setlkw(lk2, true)).istrue());
-
-            lk2.l_type = F_WRLCK;
-            wassert(actual(f2.ofd_setlk(lk2)).isfalse());
-
-            struct flock lk3;
-            memset(&lk3, 0, sizeof(lk3));
-            lk3.l_type = F_WRLCK;
-            lk3.l_whence = SEEK_SET;
-            lk3.l_start = 5;
-            lk3.l_len = 100;
-            wassert(actual(f2.ofd_getlk(lk3)).isfalse());
-            wassert(actual(lk3.l_type) == F_RDLCK);
-            wassert(actual(lk3.l_whence) == SEEK_SET);
-            wassert(actual(lk3.l_start) == 0);
-            wassert(actual(lk3.l_len) == 10);
-
-            lk1.l_type = F_UNLCK;
-            wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
-
-            wassert(actual(f2.ofd_setlk(lk2)).istrue());
-        });
-
-        add_method("preserve_file_times", []() {
-            File test("test", O_RDWR | O_CREAT, 0666);
-            struct timespec ts[2] = { { 1500000000, 0 }, { 1500000000, 0 } };
-            test.futimens(ts);
-
-            {
-                PreserveFileTimes pt(test);
-                test.write("test", 4);
-            }
-
-            struct stat st;
-            test.fstat(st);
-
-            wassert(actual(st.st_atim.tv_sec) == 1500000000);
-            wassert(actual(st.st_atim.tv_nsec) == 0);
-            wassert(actual(st.st_mtim.tv_sec) == 1500000000);
-            wassert(actual(st.st_mtim.tv_nsec) == 0);
-        });
-
-        add_method("touch", []() {
-            write_file("test", "foo");
-            touch("test", 123456);
-
-            struct stat st;
-            stat("test", st);
-
-            wassert(actual(st.st_atim.tv_sec) == 123456);
-            wassert(actual(st.st_atim.tv_nsec) == 0);
-            wassert(actual(st.st_mtim.tv_sec) == 123456);
-            wassert(actual(st.st_mtim.tv_nsec) == 0);
-        });
-
-        add_method("timespec_elapsed", []() {
-            struct ::timespec begin, until;
-
-            begin.tv_sec = 100; begin.tv_nsec = 50;
-            until.tv_sec = 100; until.tv_nsec = 60;
-            wassert(actual(timesec_elapsed(begin, until)) == 10u);
-
-            begin.tv_sec = 100; begin.tv_nsec = 50;
-            until.tv_sec = 101; until.tv_nsec = 40;
-            wassert(actual(timesec_elapsed(begin, until)) == 1000000000u - 10u);
-
-            begin.tv_sec = 100; begin.tv_nsec = 50;
-            until.tv_sec = 101; until.tv_nsec = 60;
-            wassert(actual(timesec_elapsed(begin, until)) == 1000000000u + 10u);
-
-            begin.tv_sec = 100; begin.tv_nsec = 0;
-            until.tv_sec = 101; until.tv_nsec = 0;
-            wassert(actual(timesec_elapsed(begin, until)) == 1000000000u);
-
-            begin.tv_sec = 101; begin.tv_nsec = 0;
-            until.tv_sec = 100; until.tv_nsec = 0;
-            wassert(actual(timesec_elapsed(begin, until)) == 0u);
-
-            begin.tv_sec = 100; begin.tv_nsec = 5;
-            until.tv_sec = 100; until.tv_nsec = 4;
-            wassert(actual(timesec_elapsed(begin, until)) == 0u);
-        });
-
-        add_method("rlimit", []() {
-            File fd("testfile", O_WRONLY | O_CREAT | O_TRUNC);
-
-            struct rlimit rlim_pre;
-            getrlimit(RLIMIT_NOFILE, rlim_pre);
-
-            {
-                OverrideRlimit ov(RLIMIT_NOFILE, 0);
-                struct rlimit rlim_cur;
-                getrlimit(RLIMIT_NOFILE, rlim_cur);
-                wassert(actual(rlim_cur.rlim_max) == rlim_pre.rlim_max);
-                wassert(actual(rlim_cur.rlim_cur) == 0u);
-
-                int dupfd = ::dup(fd);
-                if (dupfd != -1) ::close(dupfd);
-                wassert(actual(dupfd == -1));
-                wassert(actual(errno) == EMFILE);
-            }
-
-            struct rlimit rlim_post;
-            getrlimit(RLIMIT_NOFILE, rlim_post);
-            wassert(actual(rlim_post.rlim_max) == rlim_pre.rlim_max);
-            wassert(actual(rlim_post.rlim_cur) == rlim_pre.rlim_cur);
-
-            int dupfd = ::dup(fd);
-            if (dupfd != -1) ::close(dupfd);
-            wassert(actual(dupfd >= 0));
-        });
-    }
+    void register_tests() override;
 } test("sys");
+
+void Tests::register_tests() {
+
+add_method("isdir", []() {
+    system("rm -rf testdir");
+    wassert(actual(isdir("testdir")).isfalse());
+    system("touch testdir");
+    wassert(actual(isdir("testdir")).isfalse());
+    system("rm testdir; mkdir testdir");
+    wassert(actual(isdir("testdir")).istrue());
+});
+
+add_method("timestamp", []() {
+    using namespace wobble;
+    system("rm -f testfile");
+    wassert(actual(sys::timestamp("testfile", 0)) == 0);
+    write_file("testfile", "");
+    wassert(actual(sys::timestamp("testfile")) != 0);
+    wassert(actual(sys::timestamp("testfile", 0)) != 0);
+    unlink("testfile");
+    wassert(actual(sys::timestamp("testfile", 0)) == 0);
+});
+
+add_method("write_file_atomically", []() {
+    string test("ciao");
+    write_file_atomically("testfile", test);
+    string test1 = read_file("testfile");
+    wassert(actual(test1) == test);
+
+    write_file("testfile", "");
+    wassert(actual(read_file("testfile")) == "");
+});
+
+add_method("directory_iterate", []() {
+    Path dir("/", O_DIRECTORY);
+
+    set<string> files;
+    for (auto& i: dir)
+        files.insert(i.d_name);
+
+    wassert(actual(files.size()) > 0u);
+    wassert(actual(files.find(".") != files.end()).istrue());
+    wassert(actual(files.find("..") != files.end()).istrue());
+    wassert(actual(files.find("etc") != files.end()).istrue());
+    wassert(actual(files.find("bin") != files.end()).istrue());
+    wassert(actual(files.find("tmp") != files.end()).istrue());
+
+    // Check that the directory can be iterated twice in a row
+    files.clear();
+    for (auto& i: dir)
+        files.insert(i.d_name);
+
+    wassert(actual(files.size()) > 0u);
+    wassert(actual(files.find(".") != files.end()).istrue());
+    wassert(actual(files.find("..") != files.end()).istrue());
+    wassert(actual(files.find("etc") != files.end()).istrue());
+    wassert(actual(files.find("bin") != files.end()).istrue());
+    wassert(actual(files.find("tmp") != files.end()).istrue());
+
+    struct stat st;;
+    dir.fstatat("etc", st);
+    wassert(actual(S_ISDIR(st.st_mode)).istrue());
+
+    wassert(actual(dir.fstatat_ifexists("wobble_unit_test_file_expected_not_to_be_there", st)).isfalse());
+
+    wassert(actual(dir.faccessat("etc", X_OK)).istrue());
+    wassert(actual(dir.faccessat("wobble_unit_test_file_expected_not_to_be_there", F_OK)).isfalse());
+});
+
+add_method("openat_ifexists", []() {
+    Path dir("/etc", O_DIRECTORY);
+
+    int fd = dir.openat_ifexists("passwd", O_RDONLY);
+    wassert(actual(fd) != -1);
+    ::close(fd);
+
+    fd = dir.openat_ifexists("does-not-exist-really", O_RDONLY);
+    wassert(actual(fd) == -1);
+});
+
+
+add_method("makedirs", []() {
+    wassert(actual(makedirs("makedirs/foo/bar/baz")).istrue());
+    wassert(actual(isdir("makedirs/foo/bar/baz")).istrue());
+    wassert(actual(makedirs("makedirs/foo/bar/baz")).isfalse());
+    wassert(actual(isdir("makedirs/foo/bar/baz")).istrue());
+});
+
+add_method("rmtree", []() {
+    makedirs("foo/bar/baz");
+    makedirs("foo/bar/gnat");
+    write_file("foo/bar/baz.txt", "baz");
+    write_file("foo/bar/baz/gnat.txt", "gnat");
+    write_file("foo/bar.txt", "bar");
+    rmtree("foo");
+    wassert(actual(exists("foo")).isfalse());
+
+    rmtree_ifexists("foo");
+});
+
+add_method("which", []() {
+    wassert(actual(which("ls")).endswith("/bin/ls"));
+});
+
+add_method("unlink_ifexists", []() {
+    const char* fname = "test_unlink_ifexists";
+
+    unlink_ifexists(fname);
+    wassert(actual(unlink_ifexists(fname)).isfalse());
+    write_file(fname, "test");
+    wassert(actual(exists(fname)).istrue());
+    wassert(actual(unlink_ifexists(fname)).istrue());
+    wassert(actual(exists(fname)).isfalse());
+});
+
+add_method("rename_ifexists", []() {
+    const char* fname = "test_rename_ifexists";
+    const char* fname1 = "test_rename_ifexists1";
+
+    unlink_ifexists(fname);
+    unlink_ifexists(fname1);
+    wassert(actual(rename_ifexists(fname, fname1)).isfalse());
+
+    write_file(fname, "test");
+    wassert(actual(exists(fname)).istrue());
+    wassert(actual(exists(fname1)).isfalse());
+
+    wassert(actual(rename_ifexists(fname, fname1)).istrue());
+    wassert(actual(exists(fname)).isfalse());
+    wassert(actual(exists(fname1)).istrue());
+
+    unlink(fname1);
+});
+
+add_method("rename", []() {
+    const char* fname = "test_rename";
+    const char* fname1 = "test_rename1";
+
+    write_file(fname, "test");
+    rename(fname, fname1);
+    wassert(actual(exists(fname)).isfalse());
+    wassert(actual(exists(fname1)).istrue());
+    unlink(fname1);
+});
+
+add_method("file", []() {
+    File f("test", O_RDWR | O_CREAT, 0666);
+    wassert(actual(f.write("foo", 3)) == 3u);
+    wassert(actual(f.lseek(0)) == 0);
+    char buf[4];
+    wassert(actual(f.read(buf, 3)) == 3u);
+    buf[3] = 0;
+    wassert(actual(buf) == "foo");
+
+    wassert(actual(f.pwrite("ar", 2, 1)) == 2u);
+    wassert(actual(f.pread(buf, 3, 0)) == 3u);
+    wassert(actual(buf) == "far");
+
+    wassert(actual(f.pwrite(string("oz"), 1)) == 2u);
+    wassert(actual(f.pread(buf, 3, 0)) == 3u);
+    wassert(actual(buf) == "foz");
+
+    f.close();
+
+    wassert(actual(f.open_ifexists(O_RDONLY)));
+    f.close();
+
+    File f1("test-does-not-exists");
+    wassert(actual(f1.open_ifexists(O_RDONLY)).isfalse());
+});
+
+add_method("ofd_lock", []() {
+    File f1("test", O_RDWR | O_CREAT, 0666);
+    File f2("test", O_RDWR);
+
+    struct flock lk1;
+    memset(&lk1, 0, sizeof(lk1));
+    struct flock lk2;
+    memset(&lk2, 0, sizeof(lk2));
+
+    lk1.l_type = F_RDLCK;
+    lk1.l_whence = SEEK_SET;
+    lk1.l_start = 0;
+    lk1.l_len = 10;
+    wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
+
+    lk2.l_type = F_RDLCK;
+    lk2.l_whence = SEEK_SET;
+    lk2.l_start = 0;
+    lk2.l_len = 10;
+    wassert(actual(f2.ofd_setlkw(lk2, true)).istrue());
+
+    lk2.l_type = F_WRLCK;
+    wassert(actual(f2.ofd_setlk(lk2)).isfalse());
+
+    struct flock lk3;
+    memset(&lk3, 0, sizeof(lk3));
+    lk3.l_type = F_WRLCK;
+    lk3.l_whence = SEEK_SET;
+    lk3.l_start = 5;
+    lk3.l_len = 100;
+    wassert(actual(f2.ofd_getlk(lk3)).isfalse());
+    wassert(actual(lk3.l_type) == F_RDLCK);
+    wassert(actual(lk3.l_whence) == SEEK_SET);
+    wassert(actual(lk3.l_start) == 0);
+    wassert(actual(lk3.l_len) == 10);
+
+    lk1.l_type = F_UNLCK;
+    wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
+
+    wassert(actual(f2.ofd_setlk(lk2)).istrue());
+});
+
+add_method("preserve_file_times", []() {
+    File test("test", O_RDWR | O_CREAT, 0666);
+    struct timespec ts[2] = { { 1500000000, 0 }, { 1500000000, 0 } };
+    test.futimens(ts);
+
+    {
+        PreserveFileTimes pt(test);
+        test.write("test", 4);
+    }
+
+    struct stat st;
+    test.fstat(st);
+
+    wassert(actual(st.st_atim.tv_sec) == 1500000000);
+    wassert(actual(st.st_atim.tv_nsec) == 0);
+    wassert(actual(st.st_mtim.tv_sec) == 1500000000);
+    wassert(actual(st.st_mtim.tv_nsec) == 0);
+});
+
+add_method("touch", []() {
+    write_file("test", "foo");
+    touch("test", 123456);
+
+    struct stat st;
+    stat("test", st);
+
+    wassert(actual(st.st_atim.tv_sec) == 123456);
+    wassert(actual(st.st_atim.tv_nsec) == 0);
+    wassert(actual(st.st_mtim.tv_sec) == 123456);
+    wassert(actual(st.st_mtim.tv_nsec) == 0);
+});
+
+add_method("timespec_elapsed", []() {
+    struct ::timespec begin, until;
+
+    begin.tv_sec = 100; begin.tv_nsec = 50;
+    until.tv_sec = 100; until.tv_nsec = 60;
+    wassert(actual(timesec_elapsed(begin, until)) == 10u);
+
+    begin.tv_sec = 100; begin.tv_nsec = 50;
+    until.tv_sec = 101; until.tv_nsec = 40;
+    wassert(actual(timesec_elapsed(begin, until)) == 1000000000u - 10u);
+
+    begin.tv_sec = 100; begin.tv_nsec = 50;
+    until.tv_sec = 101; until.tv_nsec = 60;
+    wassert(actual(timesec_elapsed(begin, until)) == 1000000000u + 10u);
+
+    begin.tv_sec = 100; begin.tv_nsec = 0;
+    until.tv_sec = 101; until.tv_nsec = 0;
+    wassert(actual(timesec_elapsed(begin, until)) == 1000000000u);
+
+    begin.tv_sec = 101; begin.tv_nsec = 0;
+    until.tv_sec = 100; until.tv_nsec = 0;
+    wassert(actual(timesec_elapsed(begin, until)) == 0u);
+
+    begin.tv_sec = 100; begin.tv_nsec = 5;
+    until.tv_sec = 100; until.tv_nsec = 4;
+    wassert(actual(timesec_elapsed(begin, until)) == 0u);
+});
+
+add_method("rlimit", []() {
+    File fd("testfile", O_WRONLY | O_CREAT | O_TRUNC);
+
+    struct rlimit rlim_pre;
+    getrlimit(RLIMIT_NOFILE, rlim_pre);
+
+    {
+        OverrideRlimit ov(RLIMIT_NOFILE, 0);
+        struct rlimit rlim_cur;
+        getrlimit(RLIMIT_NOFILE, rlim_cur);
+        wassert(actual(rlim_cur.rlim_max) == rlim_pre.rlim_max);
+        wassert(actual(rlim_cur.rlim_cur) == 0u);
+
+        int dupfd = ::dup(fd);
+        if (dupfd != -1) ::close(dupfd);
+        wassert(actual(dupfd == -1));
+        wassert(actual(errno) == EMFILE);
+    }
+
+    struct rlimit rlim_post;
+    getrlimit(RLIMIT_NOFILE, rlim_post);
+    wassert(actual(rlim_post.rlim_max) == rlim_pre.rlim_max);
+    wassert(actual(rlim_post.rlim_cur) == rlim_pre.rlim_cur);
+
+    int dupfd = ::dup(fd);
+    if (dupfd != -1) ::close(dupfd);
+    wassert(actual(dupfd >= 0));
+});
+
+    }
+
+}
 
 #if 0
 
