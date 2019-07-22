@@ -322,7 +322,38 @@ add_method("rlimit", []() {
     wassert(actual(dupfd >= 0));
 });
 
+add_method("tempfile", []() {
+    std::string name;
+    {
+        Tempfile tf;
+        name = tf.name();
+        wassert(actual_file(name).exists());
     }
+    wassert(actual_file(name).not_exists());
+
+    {
+        Tempfile tf;
+        name = tf.name();
+        wassert(actual_file(name).exists());
+        tf.unlink_on_exit(false);
+    }
+    wassert(actual_file(name).exists());
+
+    unlink(name);
+
+    {
+        Tempfile tf;
+        name = tf.name();
+        wassert(actual_file(name).exists());
+        tf.unlink();
+        wassert(actual_file(name).not_exists());
+    }
+
+    {
+        Tempfile tf("wibble-test-");
+        wassert(actual(tf.name()).startswith("wibble-test-"));
+    }
+});
 
 }
 
