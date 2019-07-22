@@ -118,7 +118,7 @@ class Tests : public TestCase
         });
 
         add_method("which", []() {
-            wassert(actual(which("ls")) == "/bin/ls");
+            wassert(actual(which("ls")).endswith("/bin/ls"));
         });
 
         add_method("unlink_ifexists", []() {
