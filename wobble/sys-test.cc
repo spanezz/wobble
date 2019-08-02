@@ -364,7 +364,7 @@ add_method("sendfile", []() {
 
     Tempfile tf2("wibble-test-");
     off_t offset = 1;
-    tf1.sendfile(tf2, &offset, sample.size() - 1);
+    tf1.sendfile(tf2, offset, sample.size() - 1);
 
     tf2.lseek(0);
     char buf[20];
