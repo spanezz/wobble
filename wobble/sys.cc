@@ -920,6 +920,11 @@ File File::mkstemp(char* pathname_template)
     return File(fd, pathname_template);
 }
 
+
+/*
+ * Tempfile
+ */
+
 Tempfile::Tempfile() : sys::File(sys::File::mkstemp("")) {}
 Tempfile::Tempfile(const std::string& prefix) : sys::File(sys::File::mkstemp(prefix)) {}
 Tempfile::Tempfile(const char* prefix) : sys::File(sys::File::mkstemp(prefix)) {}
@@ -938,6 +943,29 @@ void Tempfile::unlink_on_exit(bool val)
 void Tempfile::unlink()
 {
     sys::unlink(name());
+}
+
+
+/*
+ * Tempdir
+ */
+
+Tempdir::Tempdir() : sys::Path(sys::Path::mkdtemp("")) {}
+Tempdir::Tempdir(const std::string& prefix) : sys::Path(sys::Path::mkdtemp(prefix)) {}
+Tempdir::Tempdir(const char* prefix) : sys::Path(sys::Path::mkdtemp(prefix)) {}
+
+Tempdir::~Tempdir()
+{
+    if (m_rmtree_on_exit)
+        try {
+            rmtree();
+        } catch (...) {
+        }
+}
+
+void Tempdir::rmtree_on_exit(bool val)
+{
+    m_rmtree_on_exit = val;
 }
 
 

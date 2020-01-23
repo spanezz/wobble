@@ -534,6 +534,28 @@ public:
 };
 
 
+/**
+ * Open a temporary directory.
+ *
+ * By default, the temporary directory will be deleted when the object is
+ * deleted.
+ */
+class Tempdir : public Path
+{
+protected:
+    bool m_rmtree_on_exit = true;
+
+public:
+    Tempdir();
+    Tempdir(const std::string& prefix);
+    Tempdir(const char* prefix);
+    ~Tempdir();
+
+    /// Change the rmtree-on-exit behaviour
+    void rmtree_on_exit(bool val);
+};
+
+
 /// Read whole file into memory. Throws exceptions on failure.
 std::string read_file(const std::string &file);
 

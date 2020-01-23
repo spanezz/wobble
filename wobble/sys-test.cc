@@ -381,6 +381,28 @@ add_method("mkdtemp", []() {
     rmdir(path);
 });
 
+add_method("tempdir", []() {
+    std::string path;
+    {
+        Tempdir dir;
+        path = dir.name();
+        wassert_true(isdir(dir.name()));
+        FileDescriptor fd(dir.openat("test", O_WRONLY | O_CREAT));
+        fd.close();
+        wassert_true(isreg(path + "/test"));
+    }
+    wassert_false(exists(path));
+
+    {
+        Tempdir dir;
+        path = dir.name();
+        wassert_true(isdir(dir.name()));
+        dir.rmtree_on_exit(false);
+    }
+    wassert_true(exists(path));
+    rmtree(path);
+});
+
 }
 
 #if 0
