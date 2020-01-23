@@ -457,6 +457,8 @@ struct Path : public ManagedNamedFileDescriptor
 
     void unlinkat(const char* pathname);
 
+    void mkdirat(const char* pathname, mode_t mode=0777);
+
     /// unlinkat with the AT_REMOVEDIR flag set
     void rmdirat(const char* pathname);
 

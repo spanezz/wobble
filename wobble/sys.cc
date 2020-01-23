@@ -670,6 +670,12 @@ void Path::unlinkat(const char* pathname)
         throw_error("cannot unlinkat");
 }
 
+void Path::mkdirat(const char* pathname, mode_t mode)
+{
+    if (::mkdirat(fd, pathname, mode) == -1)
+        throw_error("cannot mkdirat");
+}
+
 void Path::rmdirat(const char* pathname)
 {
     if (::unlinkat(fd, pathname, AT_REMOVEDIR) == -1)

@@ -403,6 +403,12 @@ add_method("tempdir", []() {
     rmtree(path);
 });
 
+add_method("mkdirat", []() {
+    Tempdir dir;
+    dir.mkdirat("test");
+    wassert_true(isdir(dir.name() + "/test"));
+});
+
 }
 
 #if 0
