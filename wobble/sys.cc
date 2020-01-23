@@ -839,6 +839,30 @@ void Path::rmtree()
     rmdir(name());
 }
 
+std::string Path::mkdtemp(const std::string& prefix)
+{
+    char* fbuf = (char*)alloca(prefix.size() + 7);
+    memcpy(fbuf, prefix.data(), prefix.size());
+    memcpy(fbuf + prefix.size(), "XXXXXX", 7);
+    return mkdtemp(fbuf);
+}
+
+std::string Path::mkdtemp(const char* prefix)
+{
+    size_t prefix_size = strlen(prefix);
+    char* fbuf = (char*)alloca(prefix_size + 7);
+    memcpy(fbuf, prefix, prefix_size);
+    memcpy(fbuf + prefix_size, "XXXXXX", 7);
+    return mkdtemp(fbuf);
+}
+
+std::string Path::mkdtemp(char* pathname_template)
+{
+    if (char* pathname = ::mkdtemp(pathname_template))
+        return pathname;
+    throw std::system_error(errno, std::system_category(), std::string("mkdtemp failed on ") + pathname_template);
+}
+
 /*
  * File
  */
@@ -895,7 +919,6 @@ File File::mkstemp(char* pathname_template)
         throw std::system_error(errno, std::system_category(), std::string("cannot create temporary file ") + pathname_template);
     return File(fd, pathname_template);
 }
-
 
 Tempfile::Tempfile() : sys::File(sys::File::mkstemp("")) {}
 Tempfile::Tempfile(const std::string& prefix) : sys::File(sys::File::mkstemp(prefix)) {}

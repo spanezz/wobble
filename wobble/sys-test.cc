@@ -374,6 +374,13 @@ add_method("sendfile", []() {
     wassert(actual(buf) == "oobarbaz");
 });
 
+add_method("mkdtemp", []() {
+    std::string path = Path::mkdtemp("./test");
+    wassert_true(isdir(path));
+    wassert(actual(path).startswith("./test"));
+    rmdir(path);
+});
+
 }
 
 #if 0

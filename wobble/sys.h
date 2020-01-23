@@ -466,6 +466,10 @@ struct Path : public ManagedNamedFileDescriptor
      * The path must point to a directory.
      */
     void rmtree();
+
+    static std::string mkdtemp(const std::string& prefix);
+    static std::string mkdtemp(const char* prefix);
+    static std::string mkdtemp(char* pathname_template);
 };
 
 
