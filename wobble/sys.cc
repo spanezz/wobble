@@ -557,26 +557,30 @@ ManagedNamedFileDescriptor& ManagedNamedFileDescriptor::operator=(ManagedNamedFi
  * Path
  */
 
-Path::Path(const char* pathname, int flags)
+Path::Path(const char* pathname, int flags, mode_t mode)
     : ManagedNamedFileDescriptor(-1, pathname)
 {
-    fd = open(pathname, flags | O_PATH);
-    if (fd == -1)
-        throw_error("cannot open path");
+    open(flags, mode);
 }
 
-Path::Path(const std::string& pathname, int flags)
+Path::Path(const std::string& pathname, int flags, mode_t mode)
     : ManagedNamedFileDescriptor(-1, pathname)
 {
-    fd = open(pathname.c_str(), flags | O_PATH);
-    if (fd == -1)
-        throw_error("cannot open path");
+    open(flags, mode);
 }
 
-Path::Path(Path& parent, const char* pathname, int flags)
-    : ManagedNamedFileDescriptor(parent.openat(pathname, flags | O_PATH),
+Path::Path(Path& parent, const char* pathname, int flags, mode_t mode)
+    : ManagedNamedFileDescriptor(parent.openat(pathname, flags | O_PATH, mode),
             str::joinpath(parent.name(), pathname))
 {
+}
+
+void Path::open(int flags, mode_t mode)
+{
+    close();
+    fd = ::open(pathname.c_str(), flags | O_PATH, mode);
+    if (fd == -1)
+        throw_error("cannot open path");
 }
 
 DIR* Path::fdopendir()

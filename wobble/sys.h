@@ -415,19 +415,22 @@ struct Path : public ManagedNamedFileDescriptor
     /**
      * Open the given pathname with flags | O_PATH.
      */
-    Path(const char* pathname, int flags=0);
+    Path(const char* pathname, int flags=0, mode_t mode=0777);
     /**
      * Open the given pathname with flags | O_PATH.
      */
-    Path(const std::string& pathname, int flags=0);
+    Path(const std::string& pathname, int flags=0, mode_t mode=0777);
     /**
      * Open the given pathname calling parent.openat, with flags | O_PATH
      */
-    Path(Path& parent, const char* pathname, int flags=0);
+    Path(Path& parent, const char* pathname, int flags=0, mode_t mode=0777);
     Path(const Path&) = delete;
     Path(Path&&) = default;
     Path& operator=(const Path&) = delete;
     Path& operator=(Path&&) = default;
+
+    /// Wrapper around open(2) with flags | O_PATH
+    void open(int flags, mode_t mode=0777);
 
     DIR* fdopendir();
 
