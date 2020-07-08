@@ -409,6 +409,16 @@ add_method("mkdirat", []() {
     wassert_true(isdir(dir.name() + "/test"));
 });
 
+add_method("symlinkat", []() {
+    Tempdir dir;
+    dir.symlinkat("/etc", "etc");
+
+    struct stat st;
+    wassert_true(dir.lstatat_ifexists("etc", st));
+
+    wassert(actual(dir.readlinkat("etc")) == "/etc");
+});
+
 }
 
 #if 0
