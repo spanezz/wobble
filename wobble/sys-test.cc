@@ -355,25 +355,6 @@ add_method("tempfile", []() {
     }
 });
 
-add_method("sendfile", []() {
-    std::string sample("foobarbaz");
-
-    Tempfile tf1("wibble-test-");
-    tf1.write_all_or_retry(sample);
-    tf1.lseek(0);
-
-    Tempfile tf2("wibble-test-");
-    off_t offset = 1;
-    tf1.sendfile(tf2, offset, sample.size() - 1);
-
-    tf2.lseek(0);
-    char buf[20];
-    tf2.read_all_or_throw(buf, sample.size() - 1);
-    buf[sample.size() - 1] = 0;
-
-    wassert(actual(buf) == "oobarbaz");
-});
-
 add_method("mkdtemp", []() {
     std::string path = Path::mkdtemp("./test");
     wassert_true(isdir(path));
