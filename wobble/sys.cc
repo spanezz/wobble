@@ -13,7 +13,6 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <utime.h>
-#include <alloca.h>
 #include <algorithm>
 
 namespace {
@@ -159,9 +158,9 @@ std::string getcwd()
     ::free(cwd);
     return str;
 #else
-    size_t size = pathconf(".", _PC_PATH_MAX);
-    char *buf = (char *)alloca( size );
-    if (::getcwd(buf, size) == NULL)
+    size_t size_ = pathconf(".", _PC_PATH_MAX);
+    TempBuffer buf(size_);
+    if (::getcwd(buf, size_) == NULL)
         throw std::system_error(errno, std::system_category(), "cannot get the current working directory");
     return buf;
 #endif
@@ -852,7 +851,7 @@ void Path::rmtree()
 
 std::string Path::mkdtemp(const std::string& prefix)
 {
-    char* fbuf = (char*)alloca(prefix.size() + 7);
+    TempBuffer fbuf(prefix.size() + 7);
     memcpy(fbuf, prefix.data(), prefix.size());
     memcpy(fbuf + prefix.size(), "XXXXXX", 7);
     return mkdtemp(fbuf);
@@ -861,7 +860,7 @@ std::string Path::mkdtemp(const std::string& prefix)
 std::string Path::mkdtemp(const char* prefix)
 {
     size_t prefix_size = strlen(prefix);
-    char* fbuf = (char*)alloca(prefix_size + 7);
+    TempBuffer fbuf(prefix_size + 7);
     memcpy(fbuf, prefix, prefix_size);
     memcpy(fbuf + prefix_size, "XXXXXX", 7);
     return mkdtemp(fbuf);
@@ -908,7 +907,7 @@ bool File::open_ifexists(int flags, mode_t mode)
 
 File File::mkstemp(const std::string& prefix)
 {
-    char* fbuf = (char*)alloca(prefix.size() + 7);
+    TempBuffer fbuf(prefix.size() + 7);
     memcpy(fbuf, prefix.data(), prefix.size());
     memcpy(fbuf + prefix.size(), "XXXXXX", 7);
     return mkstemp(fbuf);
@@ -917,7 +916,7 @@ File File::mkstemp(const std::string& prefix)
 File File::mkstemp(const char* prefix)
 {
     size_t prefix_size = strlen(prefix);
-    char* fbuf = (char*)alloca(prefix_size + 7);
+    TempBuffer fbuf(prefix_size + 7);
     memcpy(fbuf, prefix, prefix_size);
     memcpy(fbuf + prefix_size, "XXXXXX", 7);
     return mkstemp(fbuf);

@@ -753,6 +753,33 @@ struct OverrideRlimit
     void set(rlim_t rlim);
 };
 
+
+/// RAII local memory buffer
+template<typename T = char>
+class TempBuffer
+{
+    T* buffer = nullptr;
+
+public:
+    explicit TempBuffer(size_t size)
+        : buffer(new T[size])
+    {
+    }
+    ~TempBuffer()
+    {
+        delete[] buffer;
+    }
+    TempBuffer(const TempBuffer&) = delete;
+    TempBuffer(TempBuffer&&) = delete;
+    TempBuffer& operator=(const TempBuffer&) = delete;
+    TempBuffer& operator=(TempBuffer&&) = delete;
+
+    T* data() { return buffer; }
+    const T* data() const { return buffer; }
+    operator T*() { return buffer; }
+    operator const T*() const { return buffer; }
+};
+
 }
 }
 
