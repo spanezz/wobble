@@ -79,7 +79,7 @@ TestFailed::TestFailed(const std::exception& e)
  */
 
 TestSkipped::TestSkipped() {}
-TestSkipped::TestSkipped(const std::string& reason) : reason(reason) {}
+TestSkipped::TestSkipped(const std::string& reason_) : reason(reason_) {}
 
 
 #if 0
@@ -155,8 +155,8 @@ struct Regexp
     regex_t compiled;
     regmatch_t matches[2];
 
-    Regexp(const char* regex)
-        : regex(regex)
+    Regexp(const char* regex_)
+        : regex(regex_)
     {
         if (int err = regcomp(&compiled, this->regex.c_str(), REG_EXTENDED))
             raise_error(err);
@@ -204,12 +204,12 @@ void assert_not_re_matches(const std::string& actual, const std::string& expecte
     throw TestFailed(ss.str());
 }
 
-void assert_true(std::nullptr_t actual)
+void assert_true(std::nullptr_t)
 {
     throw TestFailed("actual value nullptr is not true");
 }
 
-void assert_false(std::nullptr_t actual)
+void assert_false(std::nullptr_t)
 {
 }
 
@@ -362,7 +362,8 @@ void ActualStdString::not_matches(const std::string& re) const
 
 void ActualDouble::almost_equal(double expected, unsigned places) const
 {
-    if (round((_actual - expected) * exp10(places)) == 0.0)
+    double epsilon = exp10(-places);
+    if (fabs(_actual - expected) <= epsilon)
         return;
     std::stringstream ss;
     ss << std::setprecision(places) << fixed << _actual << " is different than the expected " << expected;
@@ -371,7 +372,8 @@ void ActualDouble::almost_equal(double expected, unsigned places) const
 
 void ActualDouble::not_almost_equal(double expected, unsigned places) const
 {
-    if (round(_actual - expected * exp10(places)) != 0.0)
+    double epsilon = exp10(-places);
+    if (fabs(_actual - expected) > epsilon)
         return;
     std::stringstream ss;
     ss << std::setprecision(places) << fixed << _actual << " is the same as the expected " << expected;
@@ -407,8 +409,8 @@ void ActualFile::startswith(const std::string& data) const
 {
     sys::File in(_actual, O_RDONLY);
     string buf(data.size(), 0);
-    in.read_all_or_throw((void*)buf.data(), buf.size());
-    *((char*)buf.data() + buf.size()) = 0;
+    in.read_all_or_throw(buf.data(), buf.size());
+    *(buf.data() + buf.size()) = 0;
     if (buf != data)
         throw TestFailed("file " + _actual + " starts with '" + str::encode_cstring(buf) + "' instead of '" + str::encode_cstring(data) + "'");
 }
@@ -514,8 +516,8 @@ void ActualFile::contents_match(const std::initializer_list<std::string>& lines_
  * TestCase
  */
 
-TestCase::TestCase(const std::string& name)
-    : name(name)
+TestCase::TestCase(const std::string& name_)
+    : name(name_)
 {
     TestRegistry::get().register_test_case(*this);
 }

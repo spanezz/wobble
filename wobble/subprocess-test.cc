@@ -205,15 +205,15 @@ add_method("wait1", [] {
     wassert_false(cmd.terminated());
     wassert(actual(cmd.returncode()) == 0);
 
-    struct timespec pre;
+    ::timespec pre;
     wassert(actual(clock_gettime(CLOCK_MONOTONIC, &pre)) == 0);
 
     wassert_true(cmd.wait(1000));
 
-    struct timespec post;
+    ::timespec post;
     wassert(actual(clock_gettime(CLOCK_MONOTONIC, &post)) == 0);
 
-    double elapsed = (post.tv_sec - pre.tv_sec) + (post.tv_nsec - pre.tv_nsec) / 1000000000.0;
+    double elapsed = static_cast<double>(post.tv_sec - pre.tv_sec) + static_cast<double>(post.tv_nsec - pre.tv_nsec) / 1000000000.0;
     wassert(actual(elapsed) <= 0.1);
 
     wassert_true(cmd.started());

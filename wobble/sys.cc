@@ -116,13 +116,13 @@ size_t size(const std::string& file)
 {
     struct stat st;
     stat(file, st);
-    return (size_t)st.st_size;
+    return static_cast<size_t>(st.st_size);
 }
 
 size_t size(const std::string& file, size_t def)
 {
     auto st = sys::stat(file);
-    return st.get() ? (size_t)st->st_size : def;
+    return st.get() ? static_cast<size_t>(st->st_size) : def;
 }
 
 ino_t inode(const std::string& file)
@@ -197,8 +197,8 @@ std::string abspath(const std::string& pathname)
  * MMap
  */
 
-MMap::MMap(void* addr, size_t length)
-    : addr(addr), length(length)
+MMap::MMap(void* addr_, size_t length_)
+    : addr(addr_), length(length_)
 {
 }
 
@@ -244,7 +244,7 @@ FileDescriptor::FileDescriptor(FileDescriptor&& o)
 {
     o.fd = -1;
 }
-FileDescriptor::FileDescriptor(int fd) : fd(fd) {}
+FileDescriptor::FileDescriptor(int fd_) : fd(fd_) {}
 FileDescriptor::~FileDescriptor() {}
 
 void FileDescriptor::throw_error(const char* desc)
@@ -297,7 +297,7 @@ size_t FileDescriptor::read(void* buf, size_t count)
 
 bool FileDescriptor::read_all_or_retry(void* buf, size_t count)
 {
-    char* dest = (char*)buf;
+    char* dest = static_cast<char*>(buf);
     size_t remaining = count;
     while (remaining > 0)
     {
@@ -349,7 +349,7 @@ size_t FileDescriptor::pwrite(const void* buf, size_t count, off_t offset)
 off_t FileDescriptor::lseek(off_t offset, int whence)
 {
     off_t res = ::lseek(fd, offset, whence);
-    if (res == (off_t)-1)
+    if (res == static_cast<off_t>(-1))
         throw_error("cannot seek");
     return res;
 }
@@ -358,12 +358,12 @@ void FileDescriptor::write_all_or_retry(const void* buf, size_t count)
 {
     size_t written = 0;
     while (written < count)
-        written += write((unsigned char*)buf + written, count - written);
+        written += write(static_cast<const unsigned char*>(buf) + written, count - written);
 }
 
 void FileDescriptor::write_all_or_throw(const void* buf, size_t count)
 {
-    size_t written = write((unsigned char*)buf, count);
+    size_t written = write(static_cast<const unsigned char*>(buf), count);
     if (written < count)
         throw_runtime_error("partial write");
 }
@@ -376,13 +376,13 @@ void FileDescriptor::ftruncate(off_t length)
 
 MMap FileDescriptor::mmap(size_t length, int prot, int flags, off_t offset)
 {
-    void* res =::mmap(0, length, prot, flags, fd, offset);
+    void* res =::mmap(nullptr, length, prot, flags, fd, offset);
     if (res == MAP_FAILED)
         throw_error("cannot mmap");
     return MMap(res, length);
 }
 
-bool FileDescriptor::ofd_setlk(struct flock& lk)
+bool FileDescriptor::ofd_setlk(flock& lk)
 {
 #ifdef F_OFD_SETLK
     if (fcntl(fd, F_OFD_SETLK, &lk) != -1)
@@ -395,7 +395,7 @@ bool FileDescriptor::ofd_setlk(struct flock& lk)
     return false;
 }
 
-bool FileDescriptor::ofd_setlkw(struct flock& lk, bool retry_on_signal)
+bool FileDescriptor::ofd_setlkw(flock& lk, bool retry_on_signal)
 {
     while (true)
     {
@@ -412,7 +412,7 @@ bool FileDescriptor::ofd_setlkw(struct flock& lk, bool retry_on_signal)
     }
 }
 
-bool FileDescriptor::ofd_getlk(struct flock& lk)
+bool FileDescriptor::ofd_getlk(flock& lk)
 {
 #ifdef F_OFD_SETLK
     if (fcntl(fd, F_OFD_GETLK, &lk) == -1)
@@ -437,7 +437,7 @@ void FileDescriptor::setfl(int flags)
         throw_error("cannot set file flags (fcntl F_SETFL)");
 }
 
-void FileDescriptor::futimens(const struct ::timespec ts[2])
+void FileDescriptor::futimens(const ::timespec ts[2])
 {
     if (::futimens(fd, ts) == -1)
         throw_error("cannot change file timestamps");
@@ -460,8 +460,8 @@ void FileDescriptor::fdatasync()
  * PreserveFileTimes
  */
 
-PreserveFileTimes::PreserveFileTimes(FileDescriptor fd)
-    : fd(fd)
+PreserveFileTimes::PreserveFileTimes(FileDescriptor fd_)
+    : fd(fd_)
 {
     struct stat st;
     fd.fstat(st);
@@ -479,8 +479,8 @@ PreserveFileTimes::~PreserveFileTimes()
  * NamedFileDescriptor
  */
 
-NamedFileDescriptor::NamedFileDescriptor(int fd, const std::string& pathname)
-    : FileDescriptor(fd), pathname(pathname)
+NamedFileDescriptor::NamedFileDescriptor(int fd_, const std::string& pathname_)
+    : FileDescriptor(fd_), pathname(pathname_)
 {
 }
 
@@ -533,21 +533,21 @@ ManagedNamedFileDescriptor& ManagedNamedFileDescriptor::operator=(ManagedNamedFi
  * Path
  */
 
-Path::Path(const char* pathname, int flags, mode_t mode)
-    : ManagedNamedFileDescriptor(-1, pathname)
+Path::Path(const char* pathname_, int flags, mode_t mode)
+    : ManagedNamedFileDescriptor(-1, pathname_)
 {
     open(flags, mode);
 }
 
-Path::Path(const std::string& pathname, int flags, mode_t mode)
-    : ManagedNamedFileDescriptor(-1, pathname)
+Path::Path(const std::string& pathname_, int flags, mode_t mode)
+    : ManagedNamedFileDescriptor(-1, pathname_)
 {
     open(flags, mode);
 }
 
-Path::Path(Path& parent, const char* pathname, int flags, mode_t mode)
-    : ManagedNamedFileDescriptor(parent.openat(pathname, flags | O_PATH, mode),
-            str::joinpath(parent.name(), pathname))
+Path::Path(Path& parent, const char* pathname_, int flags, mode_t mode)
+    : ManagedNamedFileDescriptor(parent.openat(pathname_, flags | O_PATH, mode),
+            str::joinpath(parent.name(), pathname_))
 {
 }
 
@@ -585,17 +585,17 @@ Path::iterator Path::end()
     return iterator();
 }
 
-int Path::openat(const char* pathname, int flags, mode_t mode)
+int Path::openat(const char* pathname_, int flags, mode_t mode)
 {
-    int res = ::openat(fd, pathname, flags, mode);
+    int res = ::openat(fd, pathname_, flags, mode);
     if (res == -1)
         throw_error("cannot openat");
     return res;
 }
 
-int Path::openat_ifexists(const char* pathname, int flags, mode_t mode)
+int Path::openat_ifexists(const char* pathname_, int flags, mode_t mode)
 {
-    int res = ::openat(fd, pathname, flags, mode);
+    int res = ::openat(fd, pathname_, flags, mode);
     if (res == -1)
     {
         if (errno == ENOENT)
@@ -605,20 +605,20 @@ int Path::openat_ifexists(const char* pathname, int flags, mode_t mode)
     return res;
 }
 
-bool Path::faccessat(const char* pathname, int mode, int flags)
+bool Path::faccessat(const char* pathname_, int mode, int flags)
 {
-    return ::faccessat(fd, pathname, mode, flags) == 0;
+    return ::faccessat(fd, pathname_, mode, flags) == 0;
 }
 
-void Path::fstatat(const char* pathname, struct stat& st)
+void Path::fstatat(const char* pathname_, struct stat& st)
 {
-    if (::fstatat(fd, pathname, &st, 0) == -1)
+    if (::fstatat(fd, pathname_, &st, 0) == -1)
         throw_error("cannot fstatat");
 }
 
-bool Path::fstatat_ifexists(const char* pathname, struct stat& st)
+bool Path::fstatat_ifexists(const char* pathname_, struct stat& st)
 {
-    if (::fstatat(fd, pathname, &st, 0) == -1)
+    if (::fstatat(fd, pathname_, &st, 0) == -1)
     {
         if (errno == ENOENT)
             return false;
@@ -627,15 +627,15 @@ bool Path::fstatat_ifexists(const char* pathname, struct stat& st)
     return true;
 }
 
-void Path::lstatat(const char* pathname, struct stat& st)
+void Path::lstatat(const char* pathname_, struct stat& st)
 {
-    if (::fstatat(fd, pathname, &st, AT_SYMLINK_NOFOLLOW) == -1)
+    if (::fstatat(fd, pathname_, &st, AT_SYMLINK_NOFOLLOW) == -1)
         throw_error("cannot fstatat");
 }
 
-bool Path::lstatat_ifexists(const char* pathname, struct stat& st)
+bool Path::lstatat_ifexists(const char* pathname_, struct stat& st)
 {
-    if (::fstatat(fd, pathname, &st, AT_SYMLINK_NOFOLLOW) == -1)
+    if (::fstatat(fd, pathname_, &st, AT_SYMLINK_NOFOLLOW) == -1)
     {
         if (errno == ENOENT)
             return false;
@@ -644,21 +644,21 @@ bool Path::lstatat_ifexists(const char* pathname, struct stat& st)
     return true;
 }
 
-void Path::unlinkat(const char* pathname)
+void Path::unlinkat(const char* pathname_)
 {
-    if (::unlinkat(fd, pathname, 0) == -1)
+    if (::unlinkat(fd, pathname_, 0) == -1)
         throw_error("cannot unlinkat");
 }
 
-void Path::mkdirat(const char* pathname, mode_t mode)
+void Path::mkdirat(const char* pathname_, mode_t mode)
 {
-    if (::mkdirat(fd, pathname, mode) == -1)
+    if (::mkdirat(fd, pathname_, mode) == -1)
         throw_error("cannot mkdirat");
 }
 
-void Path::rmdirat(const char* pathname)
+void Path::rmdirat(const char* pathname_)
 {
-    if (::unlinkat(fd, pathname, AT_REMOVEDIR) == -1)
+    if (::unlinkat(fd, pathname_, AT_REMOVEDIR) == -1)
         throw_error("cannot unlinkat");
 }
 
@@ -668,16 +668,15 @@ void Path::symlinkat(const char* target, const char* linkpath)
         throw_error("cannot symlinkat");
 }
 
-std::string Path::readlinkat(const char* pathname)
+std::string Path::readlinkat(const char* pathname_)
 {
     std::string res(256, 0);
     while (true)
     {
-        // TODO: remove the cast to char* after C++14
-        ssize_t sz = ::readlinkat(fd, pathname, (char*)res.data(), res.size());
+        ssize_t sz = ::readlinkat(fd, pathname_, res.data(), res.size());
         if (sz == -1)
             throw_error("cannot readlinkat");
-        if (sz < (ssize_t)res.size())
+        if (sz < static_cast<ssize_t>(res.size()))
         {
             res.resize(sz);
             return res;
@@ -691,10 +690,10 @@ Path::iterator::iterator()
 {
 }
 
-Path::iterator::iterator(Path& dir)
-    : path(&dir)
+Path::iterator::iterator(Path& dir_)
+    : path(&dir_)
 {
-    this->dir = dir.fdopendir();
+    dir = dir_.fdopendir();
     operator++();
 }
 
@@ -716,7 +715,7 @@ bool Path::iterator::operator!=(const iterator& i) const
     return cur_entry->d_ino != i.cur_entry->d_ino;
 }
 
-void Path::iterator::operator++()
+Path::iterator& Path::iterator::operator++()
 {
     errno = 0;
     cur_entry = readdir(dir);
@@ -730,6 +729,7 @@ void Path::iterator::operator++()
         closedir(dir);
         dir = nullptr;
     }
+    return *this;
 }
 
 bool Path::iterator::isdir() const
@@ -829,7 +829,7 @@ bool Path::iterator::issock() const
 
 Path Path::iterator::open_path(int flags) const
 {
-    return Path(*path, cur_entry->d_name);
+    return Path(*path, cur_entry->d_name, flags);
 }
 
 
@@ -878,13 +878,13 @@ std::string Path::mkdtemp(char* pathname_template)
  * File
  */
 
-File::File(const std::string& pathname)
-    : ManagedNamedFileDescriptor(-1, pathname)
+File::File(const std::string& pathname_)
+    : ManagedNamedFileDescriptor(-1, pathname_)
 {
 }
 
-File::File(const std::string& pathname, int flags, mode_t mode)
-    : ManagedNamedFileDescriptor(-1, pathname)
+File::File(const std::string& pathname_, int flags, mode_t mode)
+    : ManagedNamedFileDescriptor(-1, pathname_)
 {
     open(flags, mode);
 }
@@ -994,7 +994,7 @@ std::string read_file(const std::string& file)
     // mmap the input file
     MMap src = in.mmap(st.st_size, PROT_READ, MAP_SHARED);
 
-    return std::string((const char*)src, st.st_size);
+    return std::string(static_cast<const char*>(src), st.st_size);
 }
 
 void write_file(const std::string& file, const std::string& data, mode_t mode)
@@ -1075,7 +1075,7 @@ bool rename_ifexists(const std::string& src, const std::string& dst)
 
 void touch(const std::string& pathname, time_t ts)
 {
-    struct utimbuf t = { ts, ts };
+    utimbuf t = { ts, ts };
     if (::utime(pathname.c_str(), &t) != 0)
         throw std::system_error(errno, std::system_category(), "cannot set mtime/atime of " + pathname);
 }
@@ -1205,14 +1205,14 @@ bool rmtree_ifexists(const std::string& pathname)
     return true;
 }
 
-void clock_gettime(::clockid_t clk_id, struct ::timespec& ts)
+void clock_gettime(::clockid_t clk_id, ::timespec& ts)
 {
     int res = ::clock_gettime(clk_id, &ts);
     if (res == -1)
         throw std::system_error(errno, std::system_category(), "clock_gettime failed on clock " + std::to_string(clk_id));
 }
 
-unsigned long long timesec_elapsed(const struct ::timespec& begin, const struct ::timespec& until)
+unsigned long long timesec_elapsed(const ::timespec& begin, const ::timespec& until)
 {
     if (begin.tv_sec > until.tv_sec)
         return 0;
@@ -1234,15 +1234,15 @@ unsigned long long timesec_elapsed(const struct ::timespec& begin, const struct 
  * Clock
  */
 
-Clock::Clock(clockid_t clk_id)
-    : clk_id(clk_id)
+Clock::Clock(clockid_t clk_id_)
+    : clk_id(clk_id_), ts()
 {
     clock_gettime(clk_id, ts);
 }
 
 unsigned long long Clock::elapsed()
 {
-    struct timespec cur_ts;
+    timespec cur_ts;
     clock_gettime(clk_id, cur_ts);
     return timesec_elapsed(ts, cur_ts);
 }
@@ -1252,20 +1252,20 @@ unsigned long long Clock::elapsed()
  * rlimit
  */
 
-void getrlimit(int resource, struct ::rlimit& rlim)
+void getrlimit(int resource, ::rlimit& rlim)
 {
     if (::getrlimit(resource, &rlim) == -1)
         throw std::system_error(errno, std::system_category(), "getrlimit failed");
 }
 
-void setrlimit(int resource, const struct ::rlimit& rlim)
+void setrlimit(int resource, const ::rlimit& rlim)
 {
     if (::setrlimit(resource, &rlim) == -1)
         throw std::system_error(errno, std::system_category(), "setrlimit failed");
 }
 
-OverrideRlimit::OverrideRlimit(int resource, rlim_t rlim)
-    : resource(resource)
+OverrideRlimit::OverrideRlimit(int resource_, rlim_t rlim)
+    : resource(resource_), orig()
 {
     getrlimit(resource, orig);
     set(rlim);
@@ -1278,7 +1278,7 @@ OverrideRlimit::~OverrideRlimit()
 
 void OverrideRlimit::set(rlim_t rlim)
 {
-    struct rlimit newval(orig);
+    rlimit newval(orig);
     newval.rlim_cur = rlim;
     setrlimit(resource, newval);
 }

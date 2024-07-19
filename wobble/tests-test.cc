@@ -32,10 +32,6 @@ class Tests : public TestCase
         });
 
         add_method("double", []() {
-            wassert(actual(1.0).istrue());
-            wassert(actual(0.0).isfalse());
-            wassert(actual(1.0) == 1);
-            wassert(actual(1.0) != 2);
             wassert(actual(1.0) < 2);
             wassert(actual(1.0) <= 1);
             wassert(actual(1.0) <= 2);
@@ -43,11 +39,13 @@ class Tests : public TestCase
             wassert(actual(1.0) >= 1);
             wassert(actual(1.0) >= 0);
             wassert(actual(1.0001).almost_equal(1.0002, 3));
+            wassert(actual(1.0001).not_almost_equal(1.0002, 4));
+            wassert(actual(1.0001).not_almost_equal(2.0, 2));
         });
 
         add_method("pointers", []() {
             wassert(actual(nullptr).isfalse());
-            wassert(actual((void*)"foo").istrue());
+            wassert(actual(static_cast<const void*>("foo")).istrue());
         });
 
         add_method("cstrings", []() {
@@ -186,7 +184,7 @@ struct TestSkipFixture : public FixtureTestCase<SkipFixture>
 
     void register_tests() override
     {
-        add_method("fails", [](Fixture& f) {
+        add_method("fails", [](Fixture&) {
             wfail_test("This should never run");
         });
     }

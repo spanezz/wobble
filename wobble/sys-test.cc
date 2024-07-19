@@ -19,7 +19,7 @@ class Tests : public TestCase
     using TestCase::TestCase;
 
     void register_tests() override;
-} test("sys");
+} test_("sys");
 
 void Tests::register_tests() {
 
@@ -79,7 +79,7 @@ add_method("directory_iterate", []() {
     wassert(actual(files.find("bin") != files.end()).istrue());
     wassert(actual(files.find("tmp") != files.end()).istrue());
 
-    struct stat st;;
+    struct stat st;
     dir.fstatat("etc", st);
     wassert(actual(S_ISDIR(st.st_mode)).istrue());
 
@@ -195,9 +195,9 @@ add_method("ofd_lock", []() {
     File f1("test", O_RDWR | O_CREAT, 0666);
     File f2("test", O_RDWR);
 
-    struct flock lk1;
+    ::flock lk1;
     memset(&lk1, 0, sizeof(lk1));
-    struct flock lk2;
+    ::flock lk2;
     memset(&lk2, 0, sizeof(lk2));
 
     lk1.l_type = F_RDLCK;
@@ -215,7 +215,7 @@ add_method("ofd_lock", []() {
     lk2.l_type = F_WRLCK;
     wassert(actual(f2.ofd_setlk(lk2)).isfalse());
 
-    struct flock lk3;
+    ::flock lk3;
     memset(&lk3, 0, sizeof(lk3));
     lk3.l_type = F_WRLCK;
     lk3.l_whence = SEEK_SET;
@@ -235,7 +235,7 @@ add_method("ofd_lock", []() {
 
 add_method("preserve_file_times", []() {
     File test("test", O_RDWR | O_CREAT, 0666);
-    struct timespec ts[2] = { { 1500000000, 0 }, { 1500000000, 0 } };
+    ::timespec ts[2] = { { 1500000000, 0 }, { 1500000000, 0 } };
     test.futimens(ts);
 
     {
@@ -266,7 +266,7 @@ add_method("touch", []() {
 });
 
 add_method("timespec_elapsed", []() {
-    struct ::timespec begin, until;
+    ::timespec begin, until;
 
     begin.tv_sec = 100; begin.tv_nsec = 50;
     until.tv_sec = 100; until.tv_nsec = 60;
@@ -296,12 +296,12 @@ add_method("timespec_elapsed", []() {
 add_method("rlimit", []() {
     File fd("testfile", O_WRONLY | O_CREAT | O_TRUNC);
 
-    struct rlimit rlim_pre;
+    ::rlimit rlim_pre;
     getrlimit(RLIMIT_NOFILE, rlim_pre);
 
     {
         OverrideRlimit ov(RLIMIT_NOFILE, 0);
-        struct rlimit rlim_cur;
+        ::rlimit rlim_cur;
         getrlimit(RLIMIT_NOFILE, rlim_cur);
         wassert(actual(rlim_cur.rlim_max) == rlim_pre.rlim_max);
         wassert(actual(rlim_cur.rlim_cur) == 0u);
@@ -312,7 +312,7 @@ add_method("rlimit", []() {
         wassert(actual(errno) == EMFILE);
     }
 
-    struct rlimit rlim_post;
+    ::rlimit rlim_post;
     getrlimit(RLIMIT_NOFILE, rlim_post);
     wassert(actual(rlim_post.rlim_max) == rlim_pre.rlim_max);
     wassert(actual(rlim_post.rlim_cur) == rlim_pre.rlim_cur);
@@ -323,30 +323,30 @@ add_method("rlimit", []() {
 });
 
 add_method("tempfile", []() {
-    std::string name;
+    std::string fname;
     {
         Tempfile tf;
-        name = tf.name();
-        wassert(actual_file(name).exists());
+        fname = tf.name();
+        wassert(actual_file(fname).exists());
     }
-    wassert(actual_file(name).not_exists());
+    wassert(actual_file(fname).not_exists());
 
     {
         Tempfile tf;
-        name = tf.name();
-        wassert(actual_file(name).exists());
+        fname = tf.name();
+        wassert(actual_file(fname).exists());
         tf.unlink_on_exit(false);
     }
-    wassert(actual_file(name).exists());
+    wassert(actual_file(fname).exists());
 
-    unlink(name);
+    unlink(fname);
 
     {
         Tempfile tf;
-        name = tf.name();
-        wassert(actual_file(name).exists());
+        fname = tf.name();
+        wassert(actual_file(fname).exists());
         tf.unlink();
-        wassert(actual_file(name).not_exists());
+        wassert(actual_file(fname).not_exists());
     }
 
     {

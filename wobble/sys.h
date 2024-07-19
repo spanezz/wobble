@@ -187,7 +187,7 @@ public:
     void fstat(struct stat& st);
     void fchmod(mode_t mode);
 
-    void futimens(const struct ::timespec ts[2]);
+    void futimens(const ::timespec ts[2]);
 
     void fsync();
     void fdatasync();
@@ -261,7 +261,7 @@ public:
      * Returns true if the lock was obtained, false if acquiring the lock
      * failed.
      */
-    bool ofd_setlk(struct ::flock&);
+    bool ofd_setlk(::flock&);
 
     /**
      * Open file description locks F_OFD_SETLKW operation.
@@ -272,14 +272,14 @@ public:
      * If retry_on_signal is true, acquiring the lock is automatically retried
      * in case of signals, and the function always returns true.
      */
-    bool ofd_setlkw(struct ::flock&, bool retry_on_signal=true);
+    bool ofd_setlkw(::flock&, bool retry_on_signal=true);
 
     /**
      * Open file description locks F_OFD_GETLK operation.
      *
      * Returns true if the lock would have been obtainable, false if not.
      */
-    bool ofd_getlk(struct ::flock&);
+    bool ofd_getlk(::flock&);
 
     /// Get open flags for the file
     int getfl();
@@ -298,7 +298,7 @@ class PreserveFileTimes
 {
 protected:
     FileDescriptor fd;
-    struct ::timespec ts[2];
+    ::timespec ts[2];
 
 public:
     PreserveFileTimes(FileDescriptor fd);
@@ -325,8 +325,8 @@ public:
     NamedFileDescriptor(const NamedFileDescriptor& o) = default;
     NamedFileDescriptor& operator=(const NamedFileDescriptor& o) = default;
 
-    [[noreturn]] virtual void throw_error(const char* desc);
-    [[noreturn]] virtual void throw_runtime_error(const char* desc);
+    [[noreturn]] virtual void throw_error(const char* desc) override;
+    [[noreturn]] virtual void throw_runtime_error(const char* desc) override;
 
     /// Return the file pathname
     const std::string& name() const { return pathname; }
@@ -368,14 +368,14 @@ struct Path : public ManagedNamedFileDescriptor
     struct iterator
     {
         using iterator_category = std::input_iterator_tag;
-        using value_type = struct dirent;
+        using value_type = ::dirent;
         using difference_type = int;
-        using pointer = struct dirent*;
-        using reference = struct dirent&;
+        using pointer = ::dirent*;
+        using reference = ::dirent&;
 
         Path* path = nullptr;
         DIR* dir = nullptr;
-        struct dirent* cur_entry = nullptr;
+        ::dirent* cur_entry = nullptr;
 
         // End iterator
         iterator();
@@ -394,9 +394,9 @@ struct Path : public ManagedNamedFileDescriptor
 
         bool operator==(const iterator& i) const;
         bool operator!=(const iterator& i) const;
-        struct dirent& operator*() const { return *cur_entry; }
-        struct dirent* operator->() const { return cur_entry; }
-        void operator++();
+        ::dirent& operator*() const { return *cur_entry; }
+        ::dirent* operator->() const { return cur_entry; }
+        iterator& operator++();
 
         /// @return true if we refer to a directory, else false
         bool isdir() const;
@@ -703,12 +703,12 @@ void touch(const std::string& pathname, time_t ts);
 /**
  * Call clock_gettime, raising an exception if it fails
  */
-void clock_gettime(::clockid_t clk_id, struct ::timespec& ts);
+void clock_gettime(::clockid_t clk_id, ::timespec& ts);
 
 /**
  * Return the time elapsed between two timesec structures, in nanoseconds
  */
-unsigned long long timesec_elapsed(const struct ::timespec& begin, const struct ::timespec& until);
+unsigned long long timesec_elapsed(const ::timespec& begin, const ::timespec& until);
 
 /**
  * Access to clock_gettime
@@ -716,7 +716,7 @@ unsigned long long timesec_elapsed(const struct ::timespec& begin, const struct 
 struct Clock
 {
     ::clockid_t clk_id;
-    struct ::timespec ts;
+    ::timespec ts;
 
     /**
      * Initialize ts with the value of the given clock
@@ -735,16 +735,16 @@ struct Clock
  */
 
 /// Call getrlimit, raising an exception if it fails
-void getrlimit(int resource, struct ::rlimit& rlim);
+void getrlimit(int resource, ::rlimit& rlim);
 
 /// Call setrlimit, raising an exception if it fails
-void setrlimit(int resource, const struct ::rlimit& rlim);
+void setrlimit(int resource, const ::rlimit& rlim);
 
 /// Override a soft resource limit during the lifetime of the object
 struct OverrideRlimit
 {
     int resource;
-    struct ::rlimit orig;
+    ::rlimit orig;
 
     OverrideRlimit(int resource, rlim_t rlim);
     ~OverrideRlimit();

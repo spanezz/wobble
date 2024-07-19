@@ -91,7 +91,7 @@ inline std::string upper(const std::string& str)
     std::string res;
     res.reserve(str.size());
     for (std::string::const_iterator i = str.begin(); i != str.end(); ++i)
-        res += ::toupper(*i);
+        res += static_cast<char>(std::toupper(static_cast<unsigned char>(*i)));
     return res;
 }
 
@@ -101,7 +101,7 @@ inline std::string lower(const std::string& str)
     std::string res;
     res.reserve(str.size());
     for (std::string::const_iterator i = str.begin(); i != str.end(); ++i)
-        res += ::tolower(*i);
+        res += static_cast<char>(std::tolower(static_cast<unsigned char>(*i)));
     return res;
 }
 
@@ -165,8 +165,8 @@ struct Split
      */
     bool skip_empty;
 
-    Split(const std::string& str, const std::string& sep, bool skip_empty=false)
-        : str(str), sep(sep), skip_empty(skip_empty) {}
+    Split(const std::string& str_, const std::string& sep_, bool skip_empty_=false)
+        : str(str_), sep(sep_), skip_empty(skip_empty_) {}
 
     class const_iterator
     {
@@ -190,7 +190,8 @@ struct Split
         /// Begin iterator
         const_iterator(const Split& split);
         /// End iterator
-        const_iterator() {}
+        const_iterator() : cur() {}
+        const_iterator(const const_iterator&) = default;
         ~const_iterator();
 
         const_iterator& operator++();
@@ -199,6 +200,7 @@ struct Split
 
         std::string remainder() const;
 
+        const_iterator& operator=(const const_iterator&) = default;
         bool operator==(const const_iterator& ti) const;
         bool operator!=(const const_iterator& ti) const;
     };
