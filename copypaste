@@ -15,11 +15,17 @@ class Copypaste:
     def convert(self, buf):
         if self.namespace:
             dest_namespace = self.namespace.encode("utf-8")
-            dest_location_info = (self.namespace.replace("::", "_") + "_test_location_info").encode("utf-8")
+            dest_location_info = (
+                self.namespace.replace("::", "_") + "_test_location_info"
+            ).encode("utf-8")
             dest_const = self.namespace.upper().replace("::", "_").encode("utf-8")
             ns_components = self.namespace.split("::")
-            ns_open = "".join("namespace {} {{\n".format(x) for x in ns_components).encode("utf-8")
-            ns_close = "".join("\n}" for x in range(len(ns_components) + 1)).encode("utf-8")
+            ns_open = "".join(
+                "namespace {} {{\n".format(x) for x in ns_components
+            ).encode("utf-8")
+            ns_close = "".join("\n}" for x in range(len(ns_components) + 1)).encode(
+                "utf-8"
+            )
 
         # Replace namespace and const names
         if self.namespace:
@@ -38,7 +44,9 @@ class Copypaste:
         """
         for root, dirnames, filenames in os.walk(srcdir):
             if self.subdir:
-                destpath = os.path.join(destdir, self.subdir, os.path.relpath(root, srcdir))
+                destpath = os.path.join(
+                    destdir, self.subdir, os.path.relpath(root, srcdir)
+                )
             else:
                 destpath = os.path.join(destdir, os.path.relpath(root, srcdir))
 
@@ -54,14 +62,26 @@ class Copypaste:
 
                 buf = self.convert(buf)
 
+                with open(os.path.join(destpath, fn), "rb") as fd:
+                    if buf == fd.read():
+                        continue
+
                 with open(os.path.join(destpath, fn), "wb") as fd:
                     fd.write(buf)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Create a copy of wobble for inclusion into a different project.")
-    parser.add_argument("--namespace", action="store", help="namespace to use in the destination code")
-    parser.add_argument("--subdir", action="store", help="subdirectory for the code in the target project")
+    parser = argparse.ArgumentParser(
+        description="Create a copy of wobble for inclusion into a different project."
+    )
+    parser.add_argument(
+        "--namespace", action="store", help="namespace to use in the destination code"
+    )
+    parser.add_argument(
+        "--subdir",
+        action="store",
+        help="subdirectory for the code in the target project",
+    )
     parser.add_argument("destdir", action="store", help="destination directory")
 
     args = parser.parse_args()
