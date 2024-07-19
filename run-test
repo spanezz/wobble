@@ -21,17 +21,15 @@ if [ ! -z "$DEBUGGER" ]
 then
 	echo "Running $DEBUGGER $CMD $ARGS"
 	RES=0
-        if ! $DEBUGGER $CMD $ARGS
+        if $DEBUGGER $CMD $ARGS || RES = $?
         then
-                RES=$?
                 echo "Failed with result $RES"
         fi
 else
         echo "Running $CMD $ARGS"
         RES=0
-        if ! $CMD $ARGS
+	if $CMD $ARGS || RES=$?
         then
-                RES=$?
                 echo "Failed with result $RES"
         fi
 fi
