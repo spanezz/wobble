@@ -108,6 +108,32 @@ class Tests : public TestCase
             wassert(actual(string("abc")) == buf);
         });
 
+        add_method("paths", []() {
+            using path = std::filesystem::path;
+            wassert(actual(path("foo")) == path("foo"));
+            wassert(actual(path("foo")) != path("bar"));
+            wassert(actual(path("bar")) < path("foo"));
+            wassert(actual(path("bar")) <= path("bar"));
+            wassert(actual(path("bar")) <= path("foo"));
+            wassert(actual(path("foo")) > path("bar"));
+            wassert(actual(path("foo")) >= path("foo"));
+            wassert(actual(path("foo")) >= path("bar"));
+            wassert(actual(path("foo")).is("foo"));
+            wassert(actual(path("foo/.")).is("foo/"));
+            wassert(actual(path("foo/../bar")).is("baz/foo/../../bar"));
+            wassert(actual(path("foo")).startswith("foo"));
+            wassert(actual(path("foo/bar")).startswith("foo"));
+            wassert(actual(path("foo/bar/baz")).startswith("foo/bar"));
+            wassert(actual(path("foo")).endswith("foo"));
+            wassert(actual(path("foo/bar")).endswith("bar"));
+            wassert(actual(path("foo/bar/baz")).endswith("bar/baz"));
+            wassert(actual(path("foo")).contains("foo"));
+            wassert(actual(path("foo/bar/baz")).contains("foo/bar"));
+            wassert(actual(path("foo/bar/baz")).contains("bar"));
+            wassert(actual(path("foo/bar/baz")).contains("bar/baz"));
+            wassert(actual(path("foo/bar/baz")).contains("baz"));
+        });
+
         add_method("function", []() {
             wassert(actual_function([]() { throw std::runtime_error("foobar"); }).throws("ooba"));
         });
@@ -125,10 +151,10 @@ class Tests : public TestCase
             sys::write_file("testfile", "foo");
             wassert(actual_file("testfile").exists());
             wassert(actual_file("testfile-foobarbaz").not_exists());
-            wassert(actual_file("testfile").startswith(""));
-            wassert(actual_file("testfile").startswith("f"));
-            wassert(actual_file("testfile").startswith("fo"));
-            wassert(actual_file("testfile").startswith("foo"));
+            wassert(actual_file("testfile").contents_startwith(""));
+            wassert(actual_file("testfile").contents_startwith("f"));
+            wassert(actual_file("testfile").contents_startwith("fo"));
+            wassert(actual_file("testfile").contents_startwith("foo"));
             wassert(actual_file("testfile").not_empty());
             wassert(actual_file("testfile").contents_equal("foo"));
             std::vector<uint8_t> data;

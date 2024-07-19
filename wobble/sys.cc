@@ -32,6 +32,19 @@ inline const char* to_cstring(const char* s)
 namespace wobble {
 namespace sys {
 
+std::unique_ptr<struct stat> stat(const char* pathname)
+{
+    std::unique_ptr<struct stat> res(new struct stat);
+    if (::stat(pathname, res.get()) == -1)
+    {
+        if (errno == ENOENT)
+            return std::unique_ptr<struct stat>();
+        else
+            throw std::system_error(errno, std::system_category(), std::string("cannot stat ") + pathname);
+    }
+    return res;
+}
+
 std::unique_ptr<struct stat> stat(const std::string& pathname)
 {
     std::unique_ptr<struct stat> res(new struct stat);
@@ -45,10 +58,35 @@ std::unique_ptr<struct stat> stat(const std::string& pathname)
     return res;
 }
 
+std::unique_ptr<struct stat> stat(const std::filesystem::path& path)
+{
+    std::unique_ptr<struct stat> res(new struct stat);
+    if (::stat(path.c_str(), res.get()) == -1)
+    {
+        if (errno == ENOENT)
+            return std::unique_ptr<struct stat>();
+        else
+            throw std::system_error(errno, std::system_category(), "cannot stat " + path.string());
+    }
+    return res;
+}
+
+void stat(const char* pathname, struct stat& st)
+{
+    if (::stat(pathname, &st) == -1)
+        throw std::system_error(errno, std::system_category(), std::string("cannot stat ") + pathname);
+}
+
 void stat(const std::string& pathname, struct stat& st)
 {
     if (::stat(pathname.c_str(), &st) == -1)
         throw std::system_error(errno, std::system_category(), "cannot stat " + pathname);
+}
+
+void stat(const std::filesystem::path& path, struct stat& st)
+{
+    if (::stat(path.c_str(), &st) == -1)
+        throw std::system_error(errno, std::system_category(), "cannot stat " + path.string());
 }
 
 #define common_stat_body(testfunc) \
@@ -98,84 +136,70 @@ bool issock(const std::string& pathname)
 
 #undef common_stat_body
 
-time_t timestamp(const std::string& file)
+time_t timestamp(const std::filesystem::path& file)
 {
     struct stat st;
     stat(file, st);
     return st.st_mtime;
 }
 
-time_t timestamp(const std::string& file, time_t def)
+time_t timestamp(const std::filesystem::path& file, time_t def)
 {
     auto st = sys::stat(file);
     return st.get() ? st->st_mtime : def;
 }
 
-size_t size(const std::string& file)
+size_t size(const std::filesystem::path& file)
 {
     struct stat st;
     stat(file, st);
     return static_cast<size_t>(st.st_size);
 }
 
-size_t size(const std::string& file, size_t def)
+size_t size(const std::filesystem::path& file, size_t def)
 {
     auto st = sys::stat(file);
     return st.get() ? static_cast<size_t>(st->st_size) : def;
 }
 
-ino_t inode(const std::string& file)
+ino_t inode(const std::filesystem::path& file)
 {
     struct stat st;
     stat(file, st);
     return st.st_ino;
 }
 
-ino_t inode(const std::string& file, ino_t def)
+ino_t inode(const std::filesystem::path& file, ino_t def)
 {
     auto st = sys::stat(file);
     return st.get() ? st->st_ino : def;
 }
 
 
-bool access(const std::string &s, int m)
+bool access(const std::filesystem::path &s, int m)
 {
     return ::access(s.c_str(), m) == 0;
 }
 
 bool exists(const std::string& file)
 {
-    return sys::access(file, F_OK);
+    return std::filesystem::exists(file);
 }
 
 std::string getcwd()
 {
-#if defined(__GLIBC__)
-    char* cwd = ::get_current_dir_name();
-    if (cwd == NULL)
-        throw std::system_error(errno, std::system_category(), "cannot get the current working directory");
-    const std::string str(cwd);
-    ::free(cwd);
-    return str;
-#else
-    size_t size_ = pathconf(".", _PC_PATH_MAX);
-    TempBuffer buf(size_);
-    if (::getcwd(buf, size_) == NULL)
-        throw std::system_error(errno, std::system_category(), "cannot get the current working directory");
-    return buf;
-#endif
+    return std::filesystem::current_path().string();
 }
 
 void chdir(const std::string& dir)
 {
-    if (::chdir(dir.c_str()) == -1)
-        throw std::system_error(errno, std::system_category(), "cannot change the current working directory to " + dir);
+    std::filesystem::current_path(dir);
 }
 
-void chroot(const std::string& dir)
+void chroot(const std::filesystem::path& dir)
 {
     if (::chroot(dir.c_str()) == -1)
-        throw std::system_error(errno, std::system_category(), "cannot chroot to " + dir);
+        throw std::system_error(errno, std::system_category(), "cannot chroot to " + dir.string());
 }
 
 mode_t umask(mode_t mask)
@@ -185,10 +209,7 @@ mode_t umask(mode_t mask)
 
 std::string abspath(const std::string& pathname)
 {
-    if (pathname[0] == '/')
-        return str::normpath(pathname);
-    else
-        return str::normpath(str::joinpath(sys::getcwd(), pathname));
+    return std::filesystem::absolute(pathname).lexically_normal().string();
 }
 
 
@@ -478,13 +499,13 @@ PreserveFileTimes::~PreserveFileTimes()
  * NamedFileDescriptor
  */
 
-NamedFileDescriptor::NamedFileDescriptor(int fd_, const std::string& pathname_)
-    : FileDescriptor(fd_), pathname(pathname_)
+NamedFileDescriptor::NamedFileDescriptor(int fd_, const std::filesystem::path& path)
+    : FileDescriptor(fd_), path_(path)
 {
 }
 
 NamedFileDescriptor::NamedFileDescriptor(NamedFileDescriptor&& o)
-    : FileDescriptor(std::move(o)), pathname(std::move(o.pathname))
+    : FileDescriptor(std::move(o)), path_(std::move(o.path_))
 {
 }
 
@@ -492,19 +513,19 @@ NamedFileDescriptor& NamedFileDescriptor::operator=(NamedFileDescriptor&& o)
 {
     if (this == &o) return *this;
     fd = o.fd;
-    pathname = std::move(o.pathname);
+    path_ = std::move(o.path_);
     o.fd = -1;
     return *this;
 }
 
 void NamedFileDescriptor::throw_error(const char* desc)
 {
-    throw std::system_error(errno, std::system_category(), pathname + ": " + desc);
+    throw std::system_error(errno, std::system_category(), path_.string() + ": " + desc);
 }
 
 void NamedFileDescriptor::throw_runtime_error(const char* desc)
 {
-    throw std::runtime_error(pathname + ": " + desc);
+    throw std::runtime_error(path_.string() + ": " + desc);
 }
 
 
@@ -522,7 +543,7 @@ ManagedNamedFileDescriptor& ManagedNamedFileDescriptor::operator=(ManagedNamedFi
     if (&o == this) return *this;
     close();
     fd = o.fd;
-    pathname = std::move(o.pathname);
+    path_ = std::move(o.path_);
     o.fd = -1;
     return *this;
 }
@@ -532,28 +553,21 @@ ManagedNamedFileDescriptor& ManagedNamedFileDescriptor::operator=(ManagedNamedFi
  * Path
  */
 
-Path::Path(const char* pathname_, int flags, mode_t mode)
-    : ManagedNamedFileDescriptor(-1, pathname_)
+Path::Path(const std::filesystem::path& path, int flags, mode_t mode)
+    : ManagedNamedFileDescriptor(-1, path)
 {
     open(flags, mode);
 }
 
-Path::Path(const std::string& pathname_, int flags, mode_t mode)
-    : ManagedNamedFileDescriptor(-1, pathname_)
-{
-    open(flags, mode);
-}
-
-Path::Path(Path& parent, const char* pathname_, int flags, mode_t mode)
-    : ManagedNamedFileDescriptor(parent.openat(pathname_, flags | O_PATH, mode),
-            str::joinpath(parent.name(), pathname_))
+Path::Path(Path& parent, const char* path, int flags, mode_t mode)
+    : ManagedNamedFileDescriptor(parent.openat(path, flags | O_PATH, mode), parent.path() / path)
 {
 }
 
 void Path::open(int flags, mode_t mode)
 {
     close();
-    fd = ::open(pathname.c_str(), flags | O_PATH, mode);
+    fd = ::open(path_.c_str(), flags | O_PATH, mode);
     if (fd == -1)
         throw_error("cannot open path");
 }
@@ -846,7 +860,15 @@ void Path::rmtree()
             unlinkat(i->d_name);
     }
     // TODO: is there a way to do this using fd instead?
-    rmdir(name());
+    std::filesystem::remove(path_);
+}
+
+std::string Path::mkdtemp(const std::filesystem::path& prefix)
+{
+    TempBuffer fbuf(prefix.native().size() + 7);
+    memcpy(fbuf, prefix.native().data(), prefix.native().size());
+    memcpy(fbuf + prefix.native().size(), "XXXXXX", 7);
+    return mkdtemp(fbuf);
 }
 
 std::string Path::mkdtemp(const std::string& prefix)
@@ -877,13 +899,13 @@ std::string Path::mkdtemp(char* pathname_template)
  * File
  */
 
-File::File(const std::string& pathname_)
-    : ManagedNamedFileDescriptor(-1, pathname_)
+File::File(const std::filesystem::path& path)
+    : ManagedNamedFileDescriptor(-1, path)
 {
 }
 
-File::File(const std::string& pathname_, int flags, mode_t mode)
-    : ManagedNamedFileDescriptor(-1, pathname_)
+File::File(const std::filesystem::path& path, int flags, mode_t mode)
+    : ManagedNamedFileDescriptor(-1, path)
 {
     open(flags, mode);
 }
@@ -891,18 +913,26 @@ File::File(const std::string& pathname_, int flags, mode_t mode)
 void File::open(int flags, mode_t mode)
 {
     close();
-    fd = ::open(pathname.c_str(), flags, mode);
+    fd = ::open(path_.c_str(), flags, mode);
     if (fd == -1)
-        throw std::system_error(errno, std::system_category(), "cannot open file " + pathname);
+        throw std::system_error(errno, std::system_category(), "cannot open file " + path_.string());
 }
 
 bool File::open_ifexists(int flags, mode_t mode)
 {
     close();
-    fd = ::open(pathname.c_str(), flags, mode);
+    fd = ::open(path_.c_str(), flags, mode);
     if (fd != -1) return true;
     if (errno == ENOENT) return false;
-    throw std::system_error(errno, std::system_category(), "cannot open file " + pathname);
+    throw std::system_error(errno, std::system_category(), "cannot open file " + path_.string());
+}
+
+File File::mkstemp(const std::filesystem::path& prefix)
+{
+    TempBuffer fbuf(prefix.native().size() + 7);
+    memcpy(fbuf, prefix.native().data(), prefix.native().size());
+    memcpy(fbuf + prefix.native().size(), "XXXXXX", 7);
+    return mkstemp(fbuf);
 }
 
 File File::mkstemp(const std::string& prefix)
@@ -936,13 +966,14 @@ File File::mkstemp(char* pathname_template)
  */
 
 Tempfile::Tempfile() : sys::File(sys::File::mkstemp("")) {}
-Tempfile::Tempfile(const std::string& prefix) : sys::File(sys::File::mkstemp(prefix)) {}
+Tempfile::Tempfile(const std::filesystem::path& prefix) : sys::File(sys::File::mkstemp(prefix)) {}
+Tempfile::Tempfile(const std::string& prefix) : sys::File(sys::File::mkstemp(std::filesystem::path(prefix))) {}
 Tempfile::Tempfile(const char* prefix) : sys::File(sys::File::mkstemp(prefix)) {}
 
 Tempfile::~Tempfile()
 {
     if (m_unlink_on_exit)
-        ::unlink(name().c_str());
+        std::filesystem::remove(path_);
 }
 
 void Tempfile::unlink_on_exit(bool val)
@@ -952,7 +983,7 @@ void Tempfile::unlink_on_exit(bool val)
 
 void Tempfile::unlink()
 {
-    sys::unlink(name());
+    std::filesystem::remove(path_);
 }
 
 
@@ -961,7 +992,8 @@ void Tempfile::unlink()
  */
 
 Tempdir::Tempdir() : sys::Path(sys::Path::mkdtemp("")) {}
-Tempdir::Tempdir(const std::string& prefix) : sys::Path(sys::Path::mkdtemp(prefix)) {}
+Tempdir::Tempdir(const std::filesystem::path& prefix) : sys::Path(sys::Path::mkdtemp(prefix)) {}
+Tempdir::Tempdir(const std::string& prefix) : sys::Path(sys::Path::mkdtemp(std::filesystem::path(prefix))) {}
 Tempdir::Tempdir(const char* prefix) : sys::Path(sys::Path::mkdtemp(prefix)) {}
 
 Tempdir::~Tempdir()
@@ -979,7 +1011,7 @@ void Tempdir::rmtree_on_exit(bool val)
 }
 
 
-std::string read_file(const std::string& file)
+std::string read_file(const std::filesystem::path& file)
 {
     File in(file, O_RDONLY);
 
@@ -996,24 +1028,24 @@ std::string read_file(const std::string& file)
     return std::string(static_cast<const char*>(src), st.st_size);
 }
 
-void write_file(const std::string& file, const std::string& data, mode_t mode)
+void write_file(const std::filesystem::path& file, const std::string& data, mode_t mode)
 {
     write_file(file, data.data(), data.size(), mode);
 }
 
-void write_file(const std::string& file, const void* data, size_t size, mode_t mode)
+void write_file(const std::filesystem::path& file, const void* data, size_t size, mode_t mode)
 {
     File out(file, O_WRONLY | O_CREAT | O_TRUNC, mode);
     out.write_all_or_retry(data, size);
     out.close();
 }
 
-void write_file_atomically(const std::string& file, const std::string& data, mode_t mode)
+void write_file_atomically(const std::filesystem::path& file, const std::string& data, mode_t mode)
 {
     write_file_atomically(file, data.data(), data.size(), mode);
 }
 
-void write_file_atomically(const std::string& file, const void* data, size_t size, mode_t mode)
+void write_file_atomically(const std::filesystem::path& file, const void* data, size_t size, mode_t mode)
 {
     File out = File::mkstemp(file);
 
@@ -1027,8 +1059,8 @@ void write_file_atomically(const std::string& file, const void* data, size_t siz
     out.write_all_or_retry(data, size);
     out.close();
 
-    if (::rename(out.name().c_str(), file.c_str()) < 0)
-        throw std::system_error(errno, std::system_category(), "cannot rename " + out.name() + " to " + file);
+    if (::rename(out.path().c_str(), file.c_str()) < 0)
+        throw std::system_error(errno, std::system_category(), "cannot rename " + out.path().string() + " to " + file.string());
 }
 
 #if 0
@@ -1040,12 +1072,12 @@ void mkFilePath(const std::string& file)
 }
 #endif
 
-bool unlink_ifexists(const std::string& file)
+bool unlink_ifexists(const std::filesystem::path& file)
 {
     if (::unlink(file.c_str()) != 0)
     {
         if (errno != ENOENT)
-            throw std::system_error(errno, std::system_category(), "cannot unlink " + file);
+            throw std::system_error(errno, std::system_category(), "cannot unlink " + file.string());
         else
             return false;
     }
@@ -1055,16 +1087,15 @@ bool unlink_ifexists(const std::string& file)
 
 void rename(const std::string& src_pathname, const std::string& dst_pathname)
 {
-    if (::rename(src_pathname.c_str(), dst_pathname.c_str()) != 0)
-        throw std::system_error(errno, std::system_category(), "cannot rename " + src_pathname + " to " + dst_pathname);
+    std::filesystem::rename(src_pathname, dst_pathname);
 }
 
-bool rename_ifexists(const std::string& src, const std::string& dst)
+bool rename_ifexists(const std::filesystem::path& src, const std::filesystem::path& dst)
 {
     if (::rename(src.c_str(), dst.c_str()) != 0)
     {
         if (errno != ENOENT)
-            throw std::system_error(errno, std::system_category(), "cannot rename " + src + " to " + dst);
+            throw std::system_error(errno, std::system_category(), "cannot rename " + src.string() + " to " + dst.string());
         else
             return false;
     }
@@ -1072,90 +1103,28 @@ bool rename_ifexists(const std::string& src, const std::string& dst)
         return true;
 }
 
-void touch(const std::string& pathname, time_t ts)
+void touch(const std::filesystem::path& pathname, time_t ts)
 {
     utimbuf t = { ts, ts };
     if (::utime(pathname.c_str(), &t) != 0)
-        throw std::system_error(errno, std::system_category(), "cannot set mtime/atime of " + pathname);
+        throw std::system_error(errno, std::system_category(), "cannot set mtime/atime of " + pathname.string());
 }
 
-
-template<typename String>
-static bool impl_mkdir_ifmissing(String pathname, mode_t mode)
+bool mkdir_ifmissing(const std::filesystem::path& path)
 {
-    for (unsigned i = 0; i < 5; ++i)
-    {
-        // If it does not exist, make it
-        if (::mkdir(to_cstring(pathname), mode) != -1)
-            return true;
-
-        // throw on all errors except EEXIST. Note that EEXIST "includes the case
-        // where pathname is a symbolic link, dangling or not."
-        if (errno != EEXIST && errno != EISDIR)
-        {
-            std::stringstream msg;
-            msg << "cannot create directory " << pathname;
-            throw std::system_error(errno, std::system_category(), msg.str());
-        }
-
-        // Ensure that, if dir exists, it is a directory
-        std::unique_ptr<struct stat> st = sys::stat(pathname);
-        if (st.get() == NULL)
-        {
-            // Either dir has just been deleted, or we hit a dangling
-            // symlink.
-            //
-            // Retry creating a directory: the more we keep failing, the more
-            // the likelyhood of a dangling symlink increases.
-            //
-            // We could lstat here, but it would add yet another case for a
-            // race condition if the broken symlink gets deleted between the
-            // stat and the lstat.
-            continue;
-        }
-        else if (!S_ISDIR(st->st_mode))
-        {
-            // If it exists but it is not a directory, complain
-            std::stringstream msg;
-            msg << pathname << " exists but is not a directory";
-            throw std::runtime_error(msg.str());
-        }
-        else
-            // If it exists and it is a directory, we're fine
-            return false;
-    }
-    std::stringstream msg;
-    msg << pathname << " exists and looks like a dangling symlink";
-    throw std::runtime_error(msg.str());
+    return std::filesystem::create_directory(path);
 }
 
-bool mkdir_ifmissing(const char* pathname, mode_t mode)
+bool makedirs(const std::filesystem::path& path)
 {
-    return impl_mkdir_ifmissing(pathname, mode);
+    return std::filesystem::create_directories(path);
 }
 
-bool mkdir_ifmissing(const std::string& pathname, mode_t mode)
-{
-    return impl_mkdir_ifmissing(pathname, mode);
-}
-
-bool makedirs(const std::string& pathname, mode_t mode)
-{
-    if (pathname == "/" || pathname == ".") return false;
-    std::string parent = str::dirname(pathname);
-
-    // First ensure that the upper path exists
-    makedirs(parent, mode);
-
-    // Then create this dir
-    return mkdir_ifmissing(pathname, mode);
-}
-
-std::string which(const std::string& name)
+std::filesystem::path which(const std::string& name)
 {
     // argv[0] has an explicit path: ensure it becomes absolute
     if (name.find('/') != std::string::npos)
-        return sys::abspath(name);
+        return std::filesystem::absolute(name);
 
     // argv[0] has no explicit path, look for it in $PATH
     const char* path = getenv("PATH");
@@ -1164,40 +1133,40 @@ std::string which(const std::string& name)
     str::Split splitter(path, ":", true);
     for (const auto& i: splitter)
     {
-        std::string candidate = str::joinpath(i, name);
+        auto candidate = std::filesystem::path(i) / name;
         if (sys::access(candidate, X_OK))
-            return sys::abspath(candidate);
+            return std::filesystem::absolute(candidate);
     }
 
     return name;
 }
 
-void unlink(const std::string& pathname)
+void unlink(const std::filesystem::path& pathname)
 {
     if (::unlink(pathname.c_str()) < 0)
-        throw std::system_error(errno, std::system_category(), "cannot unlink " + pathname);
+        throw std::system_error(errno, std::system_category(), "cannot unlink " + pathname.string());
 }
 
-void rmdir(const std::string& pathname)
+void rmdir(const std::filesystem::path& pathname)
 {
     if (::rmdir(pathname.c_str()) < 0)
-        throw std::system_error(errno, std::system_category(), "cannot rmdir " + pathname);
+        throw std::system_error(errno, std::system_category(), "cannot rmdir " + pathname.string());
 }
 
-void rmtree(const std::string& pathname)
+void rmtree(const std::filesystem::path& pathname)
 {
     Path path(pathname);
     path.rmtree();
 }
 
-bool rmtree_ifexists(const std::string& pathname)
+bool rmtree_ifexists(const std::filesystem::path& pathname)
 {
     int fd = open(pathname.c_str(), O_PATH);
     if (fd == -1)
     {
         if (errno == ENOENT)
             return false;
-        throw std::system_error(errno, std::system_category(), "cannot open path " + pathname);
+        throw std::system_error(errno, std::system_category(), "cannot open path " + pathname.string());
     }
     Path path(fd, pathname);
     path.rmtree();

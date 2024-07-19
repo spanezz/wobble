@@ -12,6 +12,7 @@
 #include <string>
 #include <sstream>
 #include <exception>
+#include <filesystem>
 #include <functional>
 #include <vector>
 #include <cstdint>
@@ -356,7 +357,7 @@ struct ActualCString
 
 struct ActualStdString : public Actual<std::string>
 {
-    ActualStdString(const std::string& s) : Actual<std::string>(s) {}
+    explicit ActualStdString(const std::string& s) : Actual<std::string>(s) {}
 
     using Actual<std::string>::operator==;
     void operator==(const std::vector<uint8_t>& expected) const;
@@ -368,6 +369,33 @@ struct ActualStdString : public Actual<std::string>
     void not_contains(const std::string& expected) const;
     void matches(const std::string& re) const;
     void not_matches(const std::string& re) const;
+};
+
+struct ActualPath : public Actual<std::filesystem::path>
+{
+    explicit ActualPath(const std::filesystem::path& p) : Actual<std::filesystem::path>(p) {}
+
+    using Actual<std::filesystem::path>::operator==;
+    using Actual<std::filesystem::path>::operator!=;
+
+    // Check if the normalized paths match
+    void is(const std::filesystem::path& expected) const;
+    void startswith(const std::filesystem::path& expected) const;
+    void endswith(const std::filesystem::path& expected) const;
+    void contains(const std::filesystem::path& expected) const;
+    void not_contains(const std::filesystem::path& expected) const;
+
+    void exists() const;
+    void not_exists() const;
+    void empty() const;
+    void not_empty() const;
+
+    void contents_startwith(const std::string& data) const;
+    void contents_equal(const std::string& data) const;
+    void contents_equal(const std::vector<uint8_t>& data) const;
+    void contents_equal(const std::initializer_list<std::string>& lines) const;
+    void contents_match(const std::string& data_re) const;
+    void contents_match(const std::initializer_list<std::string>& lines_re) const;
 };
 
 struct ActualDouble : public Actual<double>
@@ -384,6 +412,7 @@ inline ActualCString actual(const char* actual) { return ActualCString(actual); 
 inline ActualCString actual(char* actual) { return ActualCString(actual); }
 inline ActualStdString actual(const std::string& actual) { return ActualStdString(actual); }
 inline ActualStdString actual(const std::vector<uint8_t>& actual) { return ActualStdString(std::string(actual.begin(), actual.end())); }
+inline ActualPath actual(const std::filesystem::path& actual) { return ActualPath(actual); }
 inline ActualDouble actual(double actual) { return ActualDouble(actual); }
 
 struct ActualFunction : public Actual<std::function<void()>>
@@ -395,23 +424,10 @@ struct ActualFunction : public Actual<std::function<void()>>
 
 inline ActualFunction actual_function(std::function<void()> actual) { return ActualFunction(actual); }
 
-struct ActualFile : public Actual<std::string>
-{
-    using Actual::Actual;
-
-    void exists() const;
-    void not_exists() const;
-    void startswith(const std::string& data) const;
-    void empty() const;
-    void not_empty() const;
-    void contents_equal(const std::string& data) const;
-    void contents_equal(const std::vector<uint8_t>& data) const;
-    void contents_equal(const std::initializer_list<std::string>& lines) const;
-    void contents_match(const std::string& data_re) const;
-    void contents_match(const std::initializer_list<std::string>& lines_re) const;
-};
-
-inline ActualFile actual_file(const std::string& pathname) { return ActualFile(pathname); }
+inline ActualPath actual_path(const char* pathname) { return ActualPath(pathname); }
+inline ActualPath actual_path(const std::string& pathname) { return ActualPath(pathname); }
+inline ActualPath actual_file(const char* pathname) { return ActualPath(pathname); }
+inline ActualPath actual_file(const std::string& pathname) { return ActualPath(pathname); }
 
 /**
  * Run the given command, raising TestFailed with the appropriate backtrace

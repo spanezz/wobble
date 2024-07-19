@@ -196,10 +196,13 @@ std::string normpath(const std::string& pathname)
     if (st.empty())
         return ".";
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     string res;
     for (const auto& i: st)
         appendpath(res, i);
     return res;
+#pragma GCC diagnostic pop
 }
 
 Split::const_iterator::const_iterator(const Split& split_)

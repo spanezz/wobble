@@ -23,6 +23,8 @@ class Tests : public TestCase
 
 void Tests::register_tests() {
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 add_method("isdir", []() {
     system("rm -rf testdir");
     wassert(actual(isdir("testdir")).isfalse());
@@ -31,6 +33,14 @@ add_method("isdir", []() {
     system("rm testdir; mkdir testdir");
     wassert(actual(isdir("testdir")).istrue());
 });
+
+add_method("abspath", []() {
+    std::string cwd = std::filesystem::current_path().string();
+    wassert(actual(abspath(".")) == cwd + "/");
+    wassert(actual(abspath("foo")) == cwd + "/foo");
+    wassert(actual(abspath("foo/")) == cwd + "/foo/");
+});
+#pragma GCC diagnostic pop
 
 add_method("timestamp", []() {
     using namespace wobble;
@@ -101,67 +111,75 @@ add_method("openat_ifexists", []() {
 });
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 add_method("makedirs", []() {
     wassert(actual(makedirs("makedirs/foo/bar/baz")).istrue());
-    wassert(actual(isdir("makedirs/foo/bar/baz")).istrue());
+    wassert(actual(std::filesystem::is_directory("makedirs/foo/bar/baz")).istrue());
     wassert(actual(makedirs("makedirs/foo/bar/baz")).isfalse());
-    wassert(actual(isdir("makedirs/foo/bar/baz")).istrue());
+    wassert(actual(std::filesystem::is_directory("makedirs/foo/bar/baz")).istrue());
 });
+#pragma GCC diagnostic pop
 
 add_method("rmtree", []() {
-    makedirs("foo/bar/baz");
-    makedirs("foo/bar/gnat");
+    namespace fs = std::filesystem;
+    auto root = fs::path("foo/bar");
+    fs::create_directories(root / "baz");
+    fs::create_directories(root / "gnat");
     write_file("foo/bar/baz.txt", "baz");
     write_file("foo/bar/baz/gnat.txt", "gnat");
     write_file("foo/bar.txt", "bar");
     rmtree("foo");
-    wassert(actual(exists("foo")).isfalse());
+    wassert(actual_file("foo").not_exists());
 
     rmtree_ifexists("foo");
 });
 
 add_method("which", []() {
-    wassert(actual(which("ls")).endswith("/bin/ls"));
+    wassert(actual(which("ls")).endswith("bin/ls"));
 });
 
 add_method("unlink_ifexists", []() {
-    const char* fname = "test_unlink_ifexists";
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    std::filesystem::path fname = "test_unlink_ifexists";
 
     unlink_ifexists(fname);
     wassert(actual(unlink_ifexists(fname)).isfalse());
     write_file(fname, "test");
-    wassert(actual(exists(fname)).istrue());
+    wassert(actual(fname).exists());
     wassert(actual(unlink_ifexists(fname)).istrue());
-    wassert(actual(exists(fname)).isfalse());
+    wassert(actual(fname).not_exists());
+#pragma GCC diagnostic pop
 });
 
 add_method("rename_ifexists", []() {
-    const char* fname = "test_rename_ifexists";
-    const char* fname1 = "test_rename_ifexists1";
+    std::filesystem::path fname = "test_rename_ifexists";
+    std::filesystem::path fname1 = "test_rename_ifexists1";
 
-    unlink_ifexists(fname);
-    unlink_ifexists(fname1);
+    std::filesystem::remove(fname);
+    std::filesystem::remove(fname1);
     wassert(actual(rename_ifexists(fname, fname1)).isfalse());
 
     write_file(fname, "test");
-    wassert(actual(exists(fname)).istrue());
-    wassert(actual(exists(fname1)).isfalse());
+    wassert(actual(fname).exists());
+    wassert(actual(fname1).not_exists());
 
     wassert(actual(rename_ifexists(fname, fname1)).istrue());
-    wassert(actual(exists(fname)).isfalse());
-    wassert(actual(exists(fname1)).istrue());
+    wassert(actual(fname).not_exists());
+    wassert(actual(fname1).exists());
 
     unlink(fname1);
 });
 
 add_method("rename", []() {
-    const char* fname = "test_rename";
-    const char* fname1 = "test_rename1";
+    std::filesystem::path fname = "test_rename";
+    std::filesystem::path fname1 = "test_rename1";
 
     write_file(fname, "test");
     rename(fname, fname1);
-    wassert(actual(exists(fname)).isfalse());
-    wassert(actual(exists(fname1)).istrue());
+    wassert(actual(fname).not_exists());
+    wassert(actual(fname1).exists());
     unlink(fname1);
 });
 
@@ -323,62 +341,61 @@ add_method("rlimit", []() {
 });
 
 add_method("tempfile", []() {
-    std::string fname;
+    std::filesystem::path path;
     {
         Tempfile tf;
-        fname = tf.name();
-        wassert(actual_file(fname).exists());
+        wassert(actual(tf.path()).exists());
+        path = tf.path();
     }
-    wassert(actual_file(fname).not_exists());
+    wassert(actual(path).not_exists());
 
     {
         Tempfile tf;
-        fname = tf.name();
-        wassert(actual_file(fname).exists());
+        wassert(actual(tf.path()).exists());
         tf.unlink_on_exit(false);
+        path = tf.path();
     }
-    wassert(actual_file(fname).exists());
+    wassert(actual_file(path).exists());
 
-    unlink(fname);
+    unlink(path);
 
     {
         Tempfile tf;
-        fname = tf.name();
-        wassert(actual_file(fname).exists());
+        wassert(actual(tf.path()).exists());
         tf.unlink();
-        wassert(actual_file(fname).not_exists());
+        wassert(actual(tf.path()).not_exists());
     }
 
     {
         Tempfile tf("wibble-test-");
-        wassert(actual(tf.name()).startswith("wibble-test-"));
+        wassert(actual(tf.path().filename().string()).startswith("wibble-test-"));
     }
 });
 
 add_method("mkdtemp", []() {
-    std::string path = Path::mkdtemp("./test");
-    wassert_true(isdir(path));
-    wassert(actual(path).startswith("./test"));
+    std::filesystem::path path = Path::mkdtemp("./test");
+    wassert_true(std::filesystem::is_directory(path));
+    wassert(actual(path.string()).startswith("./test"));
     rmdir(path);
 });
 
 add_method("tempdir", []() {
-    std::string path;
+    std::filesystem::path path;
     {
         Tempdir dir;
-        path = dir.name();
-        wassert_true(isdir(dir.name()));
+        wassert_true(std::filesystem::is_directory(dir.path()));
         FileDescriptor fd(dir.openat("test", O_WRONLY | O_CREAT));
         fd.close();
-        wassert_true(isreg(path + "/test"));
+        wassert_true(std::filesystem::is_regular_file(dir.path() / "test"));
+        path = dir.path();
     }
     wassert_false(exists(path));
 
     {
         Tempdir dir;
-        path = dir.name();
-        wassert_true(isdir(dir.name()));
+        wassert_true(std::filesystem::is_directory(dir.path()));
         dir.rmtree_on_exit(false);
+        path = dir.path();
     }
     wassert_true(exists(path));
     rmtree(path);
@@ -387,7 +404,7 @@ add_method("tempdir", []() {
 add_method("mkdirat", []() {
     Tempdir dir;
     dir.mkdirat("test");
-    wassert_true(isdir(dir.name() + "/test"));
+    wassert_true(std::filesystem::is_directory(dir.path() / "test"));
 });
 
 add_method("symlinkat", []() {

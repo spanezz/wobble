@@ -93,6 +93,8 @@ class Tests : public TestCase
             wassert(actual(str::upper("cIAO")) == "CIAO");
         });
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         add_method("basename", []() {
             wassert(actual(str::basename("ciao")) == "ciao");
             wassert(actual(str::basename("a/ciao")) == "ciao");
@@ -138,6 +140,7 @@ class Tests : public TestCase
             wassert(actual(str::normpath("foo/./bar")) == "foo/bar");
             wassert(actual(str::normpath("foo/foo/../bar")) == "foo/bar");
         });
+#pragma GCC diagnostic pop
 
         add_method("split", []() {
             str::Split split("a/b//c", "/");

@@ -106,32 +106,38 @@ inline std::string lower(const std::string& str)
 }
 
 /// Given a pathname, return the file name without its path
-std::string basename(const std::string& pathname);
+[[deprecated("Use path.filename")]] std::string basename(const std::string& pathname);
 
 /// Given a pathname, return the directory name without the file name
-std::string dirname(const std::string& pathname);
+[[deprecated("Use path.parent_path")]] std::string dirname(const std::string& pathname);
 
 /// Append path2 to path1, adding slashes when appropriate
-void appendpath(std::string& dest, const char* path2);
+[[deprecated("Use path / path")]] void appendpath(std::string& dest, const char* path2);
 
 /// Append path2 to path1, adding slashes when appropriate
-void appendpath(std::string& dest, const std::string& path2);
+[[deprecated("Use path / path")]] void appendpath(std::string& dest, const std::string& path2);
 
 /// Append an arbitrary number of path components to \a dest
 template<typename S1, typename S2, typename... Args>
-void appendpath(std::string& dest, S1 first, S2 second, Args... next)
+[[deprecated("Use path / path")]] void appendpath(std::string& dest, S1 first, S2 second, Args... next)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     appendpath(dest, first);
     appendpath(dest, second, next...);
+#pragma GCC diagnostic pop
 }
 
 /// Join two or more paths, adding slashes when appropriate
 template<typename... Args>
-std::string joinpath(Args... components)
+[[deprecated("Use path / path")]] std::string joinpath(Args... components)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     std::string res;
     appendpath(res, components...);
     return res;
+#pragma GCC diagnostic pop
 }
 
 /**
@@ -139,7 +145,7 @@ std::string joinpath(Args... components)
  *
  * For example, A//B, A/./B and A/foo/../B all become A/B.
  */
-std::string normpath(const std::string& pathname);
+[[deprecated("use path::lexically_normal or std::filesystem::canonical")]] std::string normpath(const std::string& pathname);
 
 /**
  * Split a string where a given substring is found
