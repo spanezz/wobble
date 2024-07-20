@@ -15,6 +15,8 @@
 #include <utime.h>
 #include <algorithm>
 
+using namespace std::literals;
+
 namespace {
 
 inline const char* to_cstring(const std::string& s)
@@ -40,7 +42,7 @@ std::unique_ptr<struct stat> stat(const char* pathname)
         if (errno == ENOENT)
             return std::unique_ptr<struct stat>();
         else
-            throw std::system_error(errno, std::system_category(), std::string("cannot stat ") + pathname);
+            throw std::system_error(errno, std::system_category(), "cannot stat "s + pathname);
     }
     return res;
 }
@@ -53,7 +55,7 @@ std::unique_ptr<struct stat> stat(const std::string& pathname)
         if (errno == ENOENT)
             return std::unique_ptr<struct stat>();
         else
-            throw std::system_error(errno, std::system_category(), "cannot stat " + pathname);
+            throw std::system_error(errno, std::system_category(), "cannot stat "s + pathname);
     }
     return res;
 }
@@ -66,7 +68,7 @@ std::unique_ptr<struct stat> stat(const std::filesystem::path& path)
         if (errno == ENOENT)
             return std::unique_ptr<struct stat>();
         else
-            throw std::system_error(errno, std::system_category(), "cannot stat " + path.string());
+            throw std::system_error(errno, std::system_category(), "cannot stat "s + path.native());
     }
     return res;
 }
@@ -74,7 +76,7 @@ std::unique_ptr<struct stat> stat(const std::filesystem::path& path)
 void stat(const char* pathname, struct stat& st)
 {
     if (::stat(pathname, &st) == -1)
-        throw std::system_error(errno, std::system_category(), std::string("cannot stat ") + pathname);
+        throw std::system_error(errno, std::system_category(), "cannot stat "s + pathname);
 }
 
 void stat(const std::string& pathname, struct stat& st)
@@ -86,7 +88,7 @@ void stat(const std::string& pathname, struct stat& st)
 void stat(const std::filesystem::path& path, struct stat& st)
 {
     if (::stat(path.c_str(), &st) == -1)
-        throw std::system_error(errno, std::system_category(), "cannot stat " + path.string());
+        throw std::system_error(errno, std::system_category(), "cannot stat " + path.native());
 }
 
 #define common_stat_body(testfunc) \
@@ -188,7 +190,7 @@ bool exists(const std::string& file)
 
 std::string getcwd()
 {
-    return std::filesystem::current_path().string();
+    return std::filesystem::current_path().native();
 }
 
 void chdir(const std::string& dir)
@@ -199,7 +201,7 @@ void chdir(const std::string& dir)
 void chroot(const std::filesystem::path& dir)
 {
     if (::chroot(dir.c_str()) == -1)
-        throw std::system_error(errno, std::system_category(), "cannot chroot to " + dir.string());
+        throw std::system_error(errno, std::system_category(), "cannot chroot to "s + dir.native());
 }
 
 mode_t umask(mode_t mask)
@@ -209,7 +211,7 @@ mode_t umask(mode_t mask)
 
 std::string abspath(const std::string& pathname)
 {
-    return std::filesystem::absolute(pathname).lexically_normal().string();
+    return std::filesystem::absolute(pathname).lexically_normal().native();
 }
 
 
@@ -520,12 +522,12 @@ NamedFileDescriptor& NamedFileDescriptor::operator=(NamedFileDescriptor&& o)
 
 void NamedFileDescriptor::throw_error(const char* desc)
 {
-    throw std::system_error(errno, std::system_category(), path_.string() + ": " + desc);
+    throw std::system_error(errno, std::system_category(), path_.native() + ": " + desc);
 }
 
 void NamedFileDescriptor::throw_runtime_error(const char* desc)
 {
-    throw std::runtime_error(path_.string() + ": " + desc);
+    throw std::runtime_error(path_.native() + ": " + desc);
 }
 
 
@@ -892,7 +894,7 @@ std::string Path::mkdtemp(char* pathname_template)
 {
     if (char* pathname = ::mkdtemp(pathname_template))
         return pathname;
-    throw std::system_error(errno, std::system_category(), std::string("mkdtemp failed on ") + pathname_template);
+    throw std::system_error(errno, std::system_category(), "mkdtemp failed on "s + pathname_template);
 }
 
 /*
@@ -915,7 +917,7 @@ void File::open(int flags, mode_t mode)
     close();
     fd = ::open(path_.c_str(), flags, mode);
     if (fd == -1)
-        throw std::system_error(errno, std::system_category(), "cannot open file " + path_.string());
+        throw std::system_error(errno, std::system_category(), "cannot open file "s + path_.native());
 }
 
 bool File::open_ifexists(int flags, mode_t mode)
@@ -924,7 +926,7 @@ bool File::open_ifexists(int flags, mode_t mode)
     fd = ::open(path_.c_str(), flags, mode);
     if (fd != -1) return true;
     if (errno == ENOENT) return false;
-    throw std::system_error(errno, std::system_category(), "cannot open file " + path_.string());
+    throw std::system_error(errno, std::system_category(), "cannot open file "s + path_.native());
 }
 
 File File::mkstemp(const std::filesystem::path& prefix)
@@ -956,7 +958,7 @@ File File::mkstemp(char* pathname_template)
 {
     int fd = ::mkstemp(pathname_template);
     if (fd < 0)
-        throw std::system_error(errno, std::system_category(), std::string("cannot create temporary file ") + pathname_template);
+        throw std::system_error(errno, std::system_category(), "cannot create temporary file "s + pathname_template);
     return File(fd, pathname_template);
 }
 
@@ -1060,7 +1062,7 @@ void write_file_atomically(const std::filesystem::path& file, const void* data, 
     out.close();
 
     if (::rename(out.path().c_str(), file.c_str()) < 0)
-        throw std::system_error(errno, std::system_category(), "cannot rename " + out.path().string() + " to " + file.string());
+        throw std::system_error(errno, std::system_category(), "cannot rename "s + out.path().native() + " to " + file.native());
 }
 
 #if 0
@@ -1077,7 +1079,7 @@ bool unlink_ifexists(const std::filesystem::path& file)
     if (::unlink(file.c_str()) != 0)
     {
         if (errno != ENOENT)
-            throw std::system_error(errno, std::system_category(), "cannot unlink " + file.string());
+            throw std::system_error(errno, std::system_category(), "cannot unlink "s + file.native());
         else
             return false;
     }
@@ -1095,7 +1097,7 @@ bool rename_ifexists(const std::filesystem::path& src, const std::filesystem::pa
     if (::rename(src.c_str(), dst.c_str()) != 0)
     {
         if (errno != ENOENT)
-            throw std::system_error(errno, std::system_category(), "cannot rename " + src.string() + " to " + dst.string());
+            throw std::system_error(errno, std::system_category(), "cannot rename "s + src.native() + " to " + dst.native());
         else
             return false;
     }
@@ -1107,7 +1109,7 @@ void touch(const std::filesystem::path& pathname, time_t ts)
 {
     utimbuf t = { ts, ts };
     if (::utime(pathname.c_str(), &t) != 0)
-        throw std::system_error(errno, std::system_category(), "cannot set mtime/atime of " + pathname.string());
+        throw std::system_error(errno, std::system_category(), "cannot set mtime/atime of "s + pathname.native());
 }
 
 bool mkdir_ifmissing(const std::filesystem::path& path)
@@ -1144,13 +1146,13 @@ std::filesystem::path which(const std::string& name)
 void unlink(const std::filesystem::path& pathname)
 {
     if (::unlink(pathname.c_str()) < 0)
-        throw std::system_error(errno, std::system_category(), "cannot unlink " + pathname.string());
+        throw std::system_error(errno, std::system_category(), "cannot unlink "s + pathname.native());
 }
 
 void rmdir(const std::filesystem::path& pathname)
 {
     if (::rmdir(pathname.c_str()) < 0)
-        throw std::system_error(errno, std::system_category(), "cannot rmdir " + pathname.string());
+        throw std::system_error(errno, std::system_category(), "cannot rmdir "s + pathname.native());
 }
 
 void rmtree(const std::filesystem::path& pathname)
@@ -1166,7 +1168,7 @@ bool rmtree_ifexists(const std::filesystem::path& pathname)
     {
         if (errno == ENOENT)
             return false;
-        throw std::system_error(errno, std::system_category(), "cannot open path " + pathname.string());
+        throw std::system_error(errno, std::system_category(), "cannot open path "s + pathname.native());
     }
     Path path(fd, pathname);
     path.rmtree();
@@ -1177,7 +1179,7 @@ void clock_gettime(::clockid_t clk_id, ::timespec& ts)
 {
     int res = ::clock_gettime(clk_id, &ts);
     if (res == -1)
-        throw std::system_error(errno, std::system_category(), "clock_gettime failed on clock " + std::to_string(clk_id));
+        throw std::system_error(errno, std::system_category(), "clock_gettime failed on clock "s + std::to_string(clk_id));
 }
 
 unsigned long long timesec_elapsed(const ::timespec& begin, const ::timespec& until)

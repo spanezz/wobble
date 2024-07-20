@@ -110,7 +110,7 @@ std::string dirname(const std::string& pathname)
 
     if (end == std::string::npos)
         // No previous separator found, everything should be chopped
-        return std::string(".");
+        return "."s;
     else
     {
         while (end > 0 && pathname[end - 1] == '/')
