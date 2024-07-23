@@ -136,7 +136,7 @@ add_method("rmtree", []() {
 });
 
 add_method("which", []() {
-    wassert(actual(which("ls")).endswith("bin/ls"));
+    wassert(actual(which("ls")).path_endswith("bin/ls"));
 });
 
 add_method("unlink_ifexists", []() {

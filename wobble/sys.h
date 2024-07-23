@@ -535,6 +535,8 @@ public:
      * Create an unopened File object for the given pathname
      */
     explicit File(const std::filesystem::path& path);
+    explicit File(const char* path);
+    [[deprecated("Use File(const std::filesystem::path&)")]] explicit File(const std::string& path);
 
     /// Wrapper around open(2)
     File(const std::filesystem::path& path, int flags, mode_t mode=0777);
@@ -605,9 +607,10 @@ public:
     void rmtree_on_exit(bool val);
 };
 
-
 /// Read whole file into memory. Throws exceptions on failure.
-std::string read_file(const std::filesystem::path &file);
+std::string read_file(const std::filesystem::path& file);
+[[deprecated("Use read_file(const std::filesystem::path&)")]] std::string read_file(const std::string& file);
+std::string read_file(const char* file);
 
 /**
  * Write \a data to \a file, replacing existing contents if it already exists.
@@ -616,6 +619,8 @@ std::string read_file(const std::filesystem::path &file);
  * Permissions of existing files do not change.
  */
 void write_file(const std::filesystem::path& file, const std::string& data, mode_t mode=0777);
+[[deprecated("Use write_file(const std::filesystem::path&, …)")]] void write_file(const std::string& file, const std::string& data, mode_t mode=0777);
+void write_file(const char* file, const std::string& data, mode_t mode=0777);
 
 /**
  * Write \a data to \a file, replacing existing contents if it already exists.
@@ -624,6 +629,7 @@ void write_file(const std::filesystem::path& file, const std::string& data, mode
  * Permissions of existing files do not change.
  */
 void write_file(const std::filesystem::path& file, const void* data, size_t size, mode_t mode=0777);
+[[deprecated("Use write_file(const std::filesystem::path&, …)")]] void write_file(const std::string& file, const void* data, size_t size, mode_t mode=0777);
 
 /**
  * Write \a data to \a file, replacing existing contents if it already exists.
@@ -635,6 +641,8 @@ void write_file(const std::filesystem::path& file, const void* data, size_t size
  * ensure an atomic operation.
  */
 void write_file_atomically(const std::filesystem::path& file, const std::string& data, mode_t mode=0777);
+[[deprecated("Use write_file_atomically(const std::filesystem::path&, …)")]] void write_file_atomically(const std::string& file, const std::string& data, mode_t mode=0777);
+void write_file_atomically(const char* file, const std::string& data, mode_t mode=0777);
 
 /**
  * Write \a data to \a file, replacing existing contents if it already exists.
@@ -646,6 +654,7 @@ void write_file_atomically(const std::filesystem::path& file, const std::string&
  * ensure an atomic operation.
  */
 void write_file_atomically(const std::filesystem::path& file, const void* data, size_t size, mode_t mode=0777);
+[[deprecated("Use write_file_atomically(const std::filesystem::path&, …)")]] void write_file_atomically(const std::string& file, const void* data, size_t size, mode_t mode=0777);
 
 #if 0
 // Create a temporary directory based on a template.
@@ -661,6 +670,8 @@ void mkFilePath(const std::string& file);
  *
  * @return true if the file was deleted, false if it did not exist
  */
+[[deprecated("use sys::filesystem::remove")]] bool unlink_ifexists(const char* file);
+[[deprecated("use sys::filesystem::remove")]] bool unlink_ifexists(const std::string& file);
 [[deprecated("use sys::filesystem::remove")]] bool unlink_ifexists(const std::filesystem::path& file);
 
 /**
@@ -712,6 +723,8 @@ void rmtree(const std::filesystem::path& pathname);
  * If the directory does not exist, it returns false, else true.
  */
 bool rmtree_ifexists(const std::filesystem::path& pathname);
+[[deprecated("use rmtree_ifexists(const std::filesystem::path&)")]] bool rmtree_ifexists(const std::string& pathname);
+bool rmtree_ifexists(const char* pathname);
 
 /**
  * Rename src_pathname into dst_pathname.

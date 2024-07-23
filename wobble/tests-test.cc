@@ -121,17 +121,17 @@ class Tests : public TestCase
             wassert(actual(path("foo")).is("foo"));
             wassert(actual(path("foo/.")).is("foo/"));
             wassert(actual(path("foo/../bar")).is("baz/foo/../../bar"));
-            wassert(actual(path("foo")).startswith("foo"));
-            wassert(actual(path("foo/bar")).startswith("foo"));
-            wassert(actual(path("foo/bar/baz")).startswith("foo/bar"));
-            wassert(actual(path("foo")).endswith("foo"));
-            wassert(actual(path("foo/bar")).endswith("bar"));
-            wassert(actual(path("foo/bar/baz")).endswith("bar/baz"));
-            wassert(actual(path("foo")).contains("foo"));
-            wassert(actual(path("foo/bar/baz")).contains("foo/bar"));
-            wassert(actual(path("foo/bar/baz")).contains("bar"));
-            wassert(actual(path("foo/bar/baz")).contains("bar/baz"));
-            wassert(actual(path("foo/bar/baz")).contains("baz"));
+            wassert(actual(path("foo")).path_startswith("foo"));
+            wassert(actual(path("foo/bar")).path_startswith("foo"));
+            wassert(actual(path("foo/bar/baz")).path_startswith("foo/bar"));
+            wassert(actual(path("foo")).path_endswith("foo"));
+            wassert(actual(path("foo/bar")).path_endswith("bar"));
+            wassert(actual(path("foo/bar/baz")).path_endswith("bar/baz"));
+            wassert(actual(path("foo")).path_contains("foo"));
+            wassert(actual(path("foo/bar/baz")).path_contains("foo/bar"));
+            wassert(actual(path("foo/bar/baz")).path_contains("bar"));
+            wassert(actual(path("foo/bar/baz")).path_contains("bar/baz"));
+            wassert(actual(path("foo/bar/baz")).path_contains("baz"));
         });
 
         add_method("function", []() {
@@ -175,7 +175,7 @@ class Tests : public TestCase
         add_method("empty_skipped");
 
         add_method("throws", []{
-            auto e = wassert_throws(std::runtime_error, throw std::runtime_error("expected exception"));
+            const auto e = wassert_throws(std::runtime_error, throw std::runtime_error("expected exception"));
             wassert(actual(e.what()) == "expected exception");
         });
     }

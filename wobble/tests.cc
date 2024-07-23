@@ -373,7 +373,12 @@ void ActualPath::is(const std::filesystem::path& expected) const
     }
 }
 
-void ActualPath::startswith(const std::filesystem::path& expected) const
+void ActualPath::startswith(const std::string& data) const
+{
+    contents_startwith(data);
+}
+
+void ActualPath::path_startswith(const std::filesystem::path& expected) const
 {
     auto ai = _actual.begin(), ae = expected.begin();
     for (; ai != _actual.end() && ae != expected.end(); ai++, ae++)
@@ -389,7 +394,7 @@ fail:
     throw TestFailed(ss.str());
 }
 
-void ActualPath::endswith(const std::filesystem::path& expected) const
+void ActualPath::path_endswith(const std::filesystem::path& expected) const
 {
     auto ai = _actual.end(), ae = expected.end();
     while (ai != _actual.begin() && ae != expected.begin())
@@ -408,12 +413,12 @@ fail:
     throw TestFailed(ss.str());
 }
 
-void ActualPath::contains(const std::filesystem::path& expected) const
+void ActualPath::path_contains(const std::filesystem::path& expected) const
 {
     assert_contains(_actual, expected);
 }
 
-void ActualPath::not_contains(const std::filesystem::path& expected) const
+void ActualPath::path_not_contains(const std::filesystem::path& expected) const
 {
     assert_not_contains(_actual, expected);
 }

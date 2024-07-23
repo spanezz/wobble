@@ -380,10 +380,12 @@ struct ActualPath : public Actual<std::filesystem::path>
 
     // Check if the normalized paths match
     void is(const std::filesystem::path& expected) const;
-    void startswith(const std::filesystem::path& expected) const;
-    void endswith(const std::filesystem::path& expected) const;
-    void contains(const std::filesystem::path& expected) const;
-    void not_contains(const std::filesystem::path& expected) const;
+    [[deprecated("Use path_startswith")]] void startswith(const std::string& data) const;
+
+    void path_startswith(const std::filesystem::path& expected) const;
+    void path_endswith(const std::filesystem::path& expected) const;
+    void path_contains(const std::filesystem::path& expected) const;
+    void path_not_contains(const std::filesystem::path& expected) const;
 
     void exists() const;
     void not_exists() const;

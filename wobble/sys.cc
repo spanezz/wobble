@@ -901,6 +901,16 @@ std::string Path::mkdtemp(char* pathname_template)
  * File
  */
 
+File::File(const char* path)
+    : ManagedNamedFileDescriptor(-1, path)
+{
+}
+
+File::File(const std::string& path)
+    : ManagedNamedFileDescriptor(-1, path)
+{
+}
+
 File::File(const std::filesystem::path& path)
     : ManagedNamedFileDescriptor(-1, path)
 {
@@ -1013,6 +1023,16 @@ void Tempdir::rmtree_on_exit(bool val)
 }
 
 
+std::string read_file(const char* file)
+{
+    return read_file(std::filesystem::path(file));
+}
+
+std::string read_file(const std::string& file)
+{
+    return read_file(std::filesystem::path(file));
+}
+
 std::string read_file(const std::filesystem::path& file)
 {
     File in(file, O_RDONLY);
@@ -1030,9 +1050,24 @@ std::string read_file(const std::filesystem::path& file)
     return std::string(static_cast<const char*>(src), st.st_size);
 }
 
+void write_file(const char* file, const std::string& data, mode_t mode)
+{
+    write_file(std::filesystem::path(file), data.data(), data.size(), mode);
+}
+
+void write_file(const std::string& file, const std::string& data, mode_t mode)
+{
+    write_file(std::filesystem::path(file), data.data(), data.size(), mode);
+}
+
 void write_file(const std::filesystem::path& file, const std::string& data, mode_t mode)
 {
     write_file(file, data.data(), data.size(), mode);
+}
+
+void write_file(const std::string& file, const void* data, size_t size, mode_t mode)
+{
+    write_file(std::filesystem::path(file), data, size, mode);
 }
 
 void write_file(const std::filesystem::path& file, const void* data, size_t size, mode_t mode)
@@ -1042,9 +1077,24 @@ void write_file(const std::filesystem::path& file, const void* data, size_t size
     out.close();
 }
 
+void write_file_atomically(const char* file, const std::string& data, mode_t mode)
+{
+    write_file_atomically(std::filesystem::path(file), data.data(), data.size(), mode);
+}
+
+void write_file_atomically(const std::string& file, const std::string& data, mode_t mode)
+{
+    write_file_atomically(std::filesystem::path(file), data.data(), data.size(), mode);
+}
+
 void write_file_atomically(const std::filesystem::path& file, const std::string& data, mode_t mode)
 {
     write_file_atomically(file, data.data(), data.size(), mode);
+}
+
+void write_file_atomically(const std::string& file, const void* data, size_t size, mode_t mode)
+{
+    write_file_atomically(std::filesystem::path(file), data, size, mode);
 }
 
 void write_file_atomically(const std::filesystem::path& file, const void* data, size_t size, mode_t mode)
@@ -1073,6 +1123,32 @@ void mkFilePath(const std::string& file)
         mkpath(file.substr(0, pos));
 }
 #endif
+
+bool unlink_ifexists(const char* file)
+{
+    if (::unlink(file) != 0)
+    {
+        if (errno != ENOENT)
+            throw std::system_error(errno, std::system_category(), "cannot unlink "s + file);
+        else
+            return false;
+    }
+    else
+        return true;
+}
+
+bool unlink_ifexists(const std::string& file)
+{
+    if (::unlink(file.c_str()) != 0)
+    {
+        if (errno != ENOENT)
+            throw std::system_error(errno, std::system_category(), "cannot unlink "s + file);
+        else
+            return false;
+    }
+    else
+        return true;
+}
 
 bool unlink_ifexists(const std::filesystem::path& file)
 {
@@ -1159,6 +1235,16 @@ void rmtree(const std::filesystem::path& pathname)
 {
     Path path(pathname);
     path.rmtree();
+}
+
+bool rmtree_ifexists(const std::string& pathname)
+{
+    return rmtree_ifexists(std::filesystem::path(pathname));
+}
+
+bool rmtree_ifexists(const char* pathname)
+{
+    return rmtree_ifexists(std::filesystem::path(pathname));
 }
 
 bool rmtree_ifexists(const std::filesystem::path& pathname)
