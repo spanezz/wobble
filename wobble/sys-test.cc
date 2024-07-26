@@ -23,6 +23,14 @@ class Tests : public TestCase
 
 void Tests::register_tests() {
 
+add_method("with_suffix", []() {
+    wassert(actual(with_suffix("foo", "bar")) == "foobar");
+    wassert(actual(with_suffix("foo/bar", ".zip")) == "foo/bar.zip");
+    wassert_throws(std::logic_error, with_suffix("foo/", "bar"));
+    wassert_throws(std::logic_error, with_suffix("", "bar"));
+    wassert_throws(std::logic_error, with_suffix("/", "bar"));
+});
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 add_method("isdir", []() {

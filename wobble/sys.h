@@ -24,6 +24,15 @@ namespace wobble {
 namespace sys {
 
 /**
+ * Return the path with suffix appended to its filename.
+ *
+ * path needs to have a filename, otherwise the function will throw
+ * std::invalid_argument
+ */
+std::filesystem::path with_suffix(const std::filesystem::path& path, const std::string& suffix);
+
+
+/**
  * stat() the given file and return the struct stat with the results.
  * If the file does not exist, return NULL.
  * Raises exceptions in case of errors.
