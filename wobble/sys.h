@@ -639,6 +639,7 @@ void write_file(const char* file, const std::string& data, mode_t mode=0777);
  */
 void write_file(const std::filesystem::path& file, const void* data, size_t size, mode_t mode=0777);
 [[deprecated("Use write_file(const std::filesystem::path&, …)")]] void write_file(const std::string& file, const void* data, size_t size, mode_t mode=0777);
+void write_file(const char* file, const void* data, size_t size, mode_t mode=0777);
 
 /**
  * Write \a data to \a file, replacing existing contents if it already exists.

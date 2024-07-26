@@ -1079,6 +1079,11 @@ void write_file(const std::string& file, const void* data, size_t size, mode_t m
     write_file(std::filesystem::path(file), data, size, mode);
 }
 
+void write_file(const char* file, const void* data, size_t size, mode_t mode)
+{
+    write_file(std::filesystem::path(file), data, size, mode);
+}
+
 void write_file(const std::filesystem::path& file, const void* data, size_t size, mode_t mode)
 {
     File out(file, O_WRONLY | O_CREAT | O_TRUNC, mode);
