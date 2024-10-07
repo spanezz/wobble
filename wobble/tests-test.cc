@@ -38,7 +38,13 @@ class Tests : public TestCase
             wassert(actual(1.0) > 0);
             wassert(actual(1.0) >= 1);
             wassert(actual(1.0) >= 0);
-            wassert(actual(1.0001).almost_equal(1.0002, 3));
+            wassert(actual(3.14).not_almost_equal(3.134, 2));
+            wassert(actual(3.14).not_almost_equal(3.135, 2));
+            wassert(actual(3.14).almost_equal(3.136, 2));
+            wassert(actual(3.14).almost_equal(3.140, 2));
+            wassert(actual(3.14).almost_equal(3.144, 2));
+            wassert(actual(3.14).not_almost_equal(3.145, 2));
+            wassert(actual(3.14).not_almost_equal(3.146, 2));
             wassert(actual(1.0001).not_almost_equal(1.0002, 4));
             wassert(actual(1.0001).not_almost_equal(2.0, 2));
         });
