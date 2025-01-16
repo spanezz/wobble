@@ -300,7 +300,7 @@ TestResultStats::TestResultStats(const std::vector<TestCaseResult>& results_)
         }
     }
 
-    success = methods_ok && !test_cases_failed && !methods_failed;
+    success = !test_cases_failed && !methods_failed;
 }
 
 void TestResultStats::print_results(wobble::term::Terminal& out)
