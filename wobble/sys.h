@@ -829,6 +829,9 @@ public:
     operator const T*() const { return buffer; }
 };
 
+/// Set a breakpoint at this code location
+void breakpoint();
+
 }
 }
 
