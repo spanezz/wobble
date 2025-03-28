@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <cstring>
+#include <cstdlib>
 #include <set>
 #include <unistd.h>
 
@@ -423,6 +424,44 @@ add_method("symlinkat", []() {
     wassert_true(dir.lstatat_ifexists("etc", st));
 
     wassert(actual(dir.readlinkat("etc")) == "/etc");
+});
+
+add_method("override_environment", []() {
+    const char* envname = "WOBBLE_TEST_ENVVAR";
+    unsetenv(envname);
+    wassert(actual(getenv(envname)) == nullptr);
+
+    // Unset while unset
+    {
+        OverrideEnvironment oe(envname);
+        wassert(actual(getenv(envname)) == nullptr);
+    }
+    wassert(actual(getenv(envname)) == nullptr);
+
+    // Set while unset
+    {
+        OverrideEnvironment oe(envname, "value");
+        wassert(actual(getenv(envname)) =="value");
+    }
+    wassert(actual(getenv(envname)) == nullptr);
+
+    setenv(envname, "value", 1);
+
+    // Unset while set
+    {
+        OverrideEnvironment oe(envname);
+        wassert(actual(getenv(envname)) == nullptr);
+    }
+    wassert(actual(getenv(envname)) == "value");
+
+    // Set while set
+    {
+        OverrideEnvironment oe(envname, "other");
+        wassert(actual(getenv(envname)) =="other");
+    }
+    wassert(actual(getenv(envname)) == "value");
+
+    unsetenv(envname);
 });
 
 }
