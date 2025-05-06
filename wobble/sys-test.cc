@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <set>
 #include <unistd.h>
+#include <thread>
 
 using namespace std;
 using namespace wobble::sys;
@@ -43,13 +44,52 @@ add_method("isdir", []() {
     wassert(actual(isdir("testdir")).istrue());
 });
 
-add_method("abspath", []() {
-    std::string cwd = std::filesystem::current_path().string();
-    wassert(actual(abspath(".")) == cwd + "/");
-    wassert(actual(abspath("foo")) == cwd + "/foo");
-    wassert(actual(abspath("foo/")) == cwd + "/foo/");
-});
 #pragma GCC diagnostic pop
+
+add_method("abspath", []() {
+    auto cwd = std::filesystem::current_path();
+    wassert(actual(abspath(".")) == cwd);
+    wassert(actual(abspath("foo")) == cwd / "foo");
+    wassert(actual(abspath("foo/")) == cwd / "foo/");
+});
+
+add_method("abspath_concurrency", []() {
+    // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118733
+    std::filesystem::path workdir("testdir");
+    rmtree_ifexists(workdir);
+    std::filesystem::create_directory(workdir);
+
+    auto expected = std::filesystem::absolute(workdir) / "dir";
+
+    auto testpath = workdir / "dir";
+    bool done = false;
+
+    auto glitch = [&done, &testpath] {
+        while (! done)
+        {
+            std::filesystem::remove(testpath);
+            std::filesystem::create_directory(testpath);
+        }
+    };
+
+    std::thread glitcher(glitch);
+
+    int failed_iteration = -1;
+    std::string failed_message;
+    for (unsigned iteration = 0; iteration < 1000; ++iteration)
+        try {
+            wassert(actual(abspath(testpath)) == expected);
+        } catch (std::exception& e) {
+            failed_iteration = iteration;
+            failed_message = e.what();
+            break;
+        }
+    done = true;
+    glitcher.join();
+
+    if (failed_iteration != -1)
+        wfail_test("abspath failed at iteration " + std::to_string(failed_iteration) + ": " + failed_message);
+});
 
 add_method("timestamp", []() {
     using namespace wobble;
