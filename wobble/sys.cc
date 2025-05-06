@@ -1419,8 +1419,8 @@ void OverrideRlimit::set(rlim_t rlim)
  * OverrideEnvironment
  */
 
-OverrideEnvironment::OverrideEnvironment(const std::string& name)
-    : name(name)
+OverrideEnvironment::OverrideEnvironment(const std::string& name_)
+    : name(name_)
 {
     char* old_val = getenv(name.c_str());
     if (old_val)
@@ -1432,8 +1432,8 @@ OverrideEnvironment::OverrideEnvironment(const std::string& name)
         throw std::system_error(errno, std::system_category(), "unsetenv " + name + " failed");
 }
 
-OverrideEnvironment::OverrideEnvironment(const std::string& name, const std::string& value)
-    : name(name)
+OverrideEnvironment::OverrideEnvironment(const std::string& name_, const std::string& value)
+    : name(name_)
 {
     char* old_val = getenv(name.c_str());
     if (old_val)
