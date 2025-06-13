@@ -146,6 +146,9 @@ add_method("directory_iterate", []() {
 
     wassert(actual(dir.faccessat("etc", X_OK)).istrue());
     wassert(actual(dir.faccessat("wobble_unit_test_file_expected_not_to_be_there", F_OK)).isfalse());
+
+    auto e = wassert_throws(std::runtime_error, dir.fstatat("does-not-exist", st));
+    wassert(actual(e.what()).contains("cannot fstatat does-not-exist"));
 });
 
 add_method("openat_ifexists", []() {
