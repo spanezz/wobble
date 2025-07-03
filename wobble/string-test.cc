@@ -1,5 +1,5 @@
-#include "tests.h"
 #include "string.h"
+#include "tests.h"
 
 using namespace std;
 using namespace wobble;
@@ -30,12 +30,13 @@ class Tests : public TestCase
         });
 
         add_method("join", []() {
-            vector<int> nums { 1, 2, 3 };
+            vector<int> nums{1, 2, 3};
             wassert(actual(str::join(":", nums)) == "1:2:3");
 
-            vector<std::string> strs { "", "foo", "", "", "bar" };
+            vector<std::string> strs{"", "foo", "", "", "bar"};
             wassert(actual(str::join(",", strs)) == ",foo,,,bar");
-            wassert(actual(str::join(",", strs.begin(), strs.end())) == ",foo,,,bar");
+            wassert(actual(str::join(",", strs.begin(), strs.end())) ==
+                    ",foo,,,bar");
         });
 
         add_method("strip", []() {
@@ -48,9 +49,9 @@ class Tests : public TestCase
             wassert(actual(str::strip("ciao    ")) == "ciao");
             wassert(actual(str::strip(" ciao ")) == "ciao");
             wassert(actual(str::strip("      ciao    ")) == "ciao");
-            //wassert(actual(str::strip(string("ciao"), ::isalpha)) == "");
-            //wassert(actual(str::strip(string("ci ao"), ::isalpha)) == " ");
-            //wassert(actual(str::strip(" ", ::isalpha)) == " ");
+            // wassert(actual(str::strip(string("ciao"), ::isalpha)) == "");
+            // wassert(actual(str::strip(string("ci ao"), ::isalpha)) == " ");
+            // wassert(actual(str::strip(" ", ::isalpha)) == " ");
 
             wassert(actual(str::lstrip("   ")) == "");
             wassert(actual(str::lstrip(" c  ")) == "c  ");
@@ -61,9 +62,9 @@ class Tests : public TestCase
             wassert(actual(str::lstrip("ciao    ")) == "ciao    ");
             wassert(actual(str::lstrip(" ciao ")) == "ciao ");
             wassert(actual(str::lstrip("      ciao    ")) == "ciao    ");
-            //wassert(actual(str::lstrip(string("ciao"), ::isalpha)) == "");
-            //wassert(actual(str::lstrip(string("ci ao"), ::isalpha)) == " ao");
-            //wassert(actual(str::lstrip(" ", ::isalpha)) == " ");
+            // wassert(actual(str::lstrip(string("ciao"), ::isalpha)) == "");
+            // wassert(actual(str::lstrip(string("ci ao"), ::isalpha)) == "
+            // ao"); wassert(actual(str::lstrip(" ", ::isalpha)) == " ");
 
             wassert(actual(str::rstrip("   ")) == "");
             wassert(actual(str::rstrip(" c  ")) == " c");
@@ -74,9 +75,9 @@ class Tests : public TestCase
             wassert(actual(str::rstrip("ciao    ")) == "ciao");
             wassert(actual(str::rstrip(" ciao ")) == " ciao");
             wassert(actual(str::rstrip("      ciao    ")) == "      ciao");
-            //wassert(actual(str::rstrip(string("ciao"), ::isalpha)) == "");
-            //wassert(actual(str::rstrip(string("ci ao"), ::isalpha)) == "ci ");
-            //wassert(actual(str::rstrip(" ", ::isalpha)) == " ");
+            // wassert(actual(str::rstrip(string("ciao"), ::isalpha)) == "");
+            // wassert(actual(str::rstrip(string("ci ao"), ::isalpha)) == "ci
+            // "); wassert(actual(str::rstrip(" ", ::isalpha)) == " ");
         });
 
         add_method("upper", []() {
@@ -122,7 +123,8 @@ class Tests : public TestCase
             wassert(actual(str::joinpath("a/", "b")) == "a/b");
             wassert(actual(str::joinpath("a", "/b")) == "a/b");
             wassert(actual(str::joinpath("a/", "/b")) == "a/b");
-            wassert(actual(str::joinpath("a/", "/b", string("c"), "/d/")) == "a/b/c/d/");
+            wassert(actual(str::joinpath("a/", "/b", string("c"), "/d/")) ==
+                    "a/b/c/d/");
         });
 
         add_method("normpath", []() {
@@ -133,9 +135,11 @@ class Tests : public TestCase
             wassert(actual(str::normpath("/foo")) == "/foo");
             wassert(actual(str::normpath("foo/bar")) == "foo/bar");
             wassert(actual(str::normpath("foo/./bar")) == "foo/bar");
-            wassert(actual(str::normpath("././././foo/./././bar/././././")) == "foo/bar");
+            wassert(actual(str::normpath("././././foo/./././bar/././././")) ==
+                    "foo/bar");
             wassert(actual(str::normpath("/../../../../../foo")) == "/foo");
-            wassert(actual(str::normpath("foo/../foo/../foo/../foo/../")) == ".");
+            wassert(actual(str::normpath("foo/../foo/../foo/../foo/../")) ==
+                    ".");
             wassert(actual(str::normpath("foo//bar")) == "foo/bar");
             wassert(actual(str::normpath("foo/./bar")) == "foo/bar");
             wassert(actual(str::normpath("foo/foo/../bar")) == "foo/bar");
@@ -200,9 +204,11 @@ class Tests : public TestCase
 
         add_method("encode_cstring", []() {
             size_t len;
-            wassert(actual(str::decode_cstring("cia\\x00o", len)) == string("cia\0o", 5));
+            wassert(actual(str::decode_cstring("cia\\x00o", len)) ==
+                    string("cia\0o", 5));
             wassert(actual(len) == 8u);
-            wassert(actual(str::encode_cstring(string("cia\0o", 5))) == "cia\\x00o");
+            wassert(actual(str::encode_cstring(string("cia\0o", 5))) ==
+                    "cia\\x00o");
         });
 
         add_method("encode_url", []() {
@@ -218,8 +224,11 @@ class Tests : public TestCase
             wassert(actual(str::decode_url("a%2")) == "a");
             wassert(actual(str::decode_url("a%")) == "a");
 
-            wassert(actual(str::decode_url(str::encode_url("àá☣☢☠!@#$%^&*(\")/A"))) == "àá☣☢☠!@#$%^&*(\")/A");
-            wassert(actual(str::decode_url(str::encode_url("http://zz:ss@a.b:31/c?d=e&f=g"))) == "http://zz:ss@a.b:31/c?d=e&f=g");
+            wassert(actual(str::decode_url(str::encode_url(
+                        "àá☣☢☠!@#$%^&*(\")/A"))) == "àá☣☢☠!@#$%^&*(\")/A");
+            wassert(actual(str::decode_url(
+                        str::encode_url("http://zz:ss@a.b:31/c?d=e&f=g"))) ==
+                    "http://zz:ss@a.b:31/c?d=e&f=g");
         });
 
         add_method("encode_base64", []() {
@@ -227,17 +236,23 @@ class Tests : public TestCase
             wassert(actual(str::encode_base64("antani")) == "YW50YW5p");
             wassert(actual(str::encode_base64("a b c")) == "YSBiIGM=");
             wassert(actual(str::encode_base64("a ")) == "YSA=");
-            wassert(actual(str::encode_base64("àá☣☢☠!@#$%^&*(\")/A")) == "w6DDoeKYo+KYouKYoCFAIyQlXiYqKCIpL0E=");
+            wassert(actual(str::encode_base64("àá☣☢☠!@#$%^&*(\")/A")) ==
+                    "w6DDoeKYo+KYouKYoCFAIyQlXiYqKCIpL0E=");
 
             wassert(actual(str::decode_base64("")) == "");
             wassert(actual(str::decode_base64("YW50YW5p")) == "antani");
             wassert(actual(str::decode_base64("YSBi")) == "a b");
             wassert(actual(str::decode_base64("YSA=")) == "a ");
             wassert(actual(str::decode_base64("YQ==")) == "a");
-            wassert(actual(str::decode_base64("w6DDoeKYo+KYouKYoCFAIyQlXiYqKCIpL0E=")) == "àá☣☢☠!@#$%^&*(\")/A");
+            wassert(actual(str::decode_base64(
+                        "w6DDoeKYo+KYouKYoCFAIyQlXiYqKCIpL0E=")) ==
+                    "àá☣☢☠!@#$%^&*(\")/A");
 
-            wassert(actual(str::decode_base64(str::encode_base64("àá☣☢☠!@#$%^&*(\")/A"))) == "àá☣☢☠!@#$%^&*(\")/A");
-            wassert(actual(str::decode_base64(str::encode_base64("http://zz:ss@a.b:31/c?d=e&f=g"))) == "http://zz:ss@a.b:31/c?d=e&f=g");
+            wassert(actual(str::decode_base64(str::encode_base64(
+                        "àá☣☢☠!@#$%^&*(\")/A"))) == "àá☣☢☠!@#$%^&*(\")/A");
+            wassert(actual(str::decode_base64(
+                        str::encode_base64("http://zz:ss@a.b:31/c?d=e&f=g"))) ==
+                    "http://zz:ss@a.b:31/c?d=e&f=g");
 
             wassert(actual(str::encode_base64("")) == "");
             wassert(actual(str::encode_base64("c")) == "Yw==");
@@ -252,16 +267,24 @@ class Tests : public TestCase
 
             wassert(actual(str::decode_base64(str::encode_base64(""))) == "");
             wassert(actual(str::decode_base64(str::encode_base64("c"))) == "c");
-            wassert(actual(str::decode_base64(str::encode_base64("ci"))) == "ci");
-            wassert(actual(str::decode_base64(str::encode_base64("cia"))) == "cia");
-            wassert(actual(str::decode_base64(str::encode_base64("ciao"))) == "ciao");
-            wassert(actual(str::decode_base64(str::encode_base64("ciao "))) == "ciao ");
-            wassert(actual(str::decode_base64(str::encode_base64("ciao c"))) == "ciao c");
-            wassert(actual(str::decode_base64(str::encode_base64("ciao ci"))) == "ciao ci");
-            wassert(actual(str::decode_base64(str::encode_base64("ciao cia"))) == "ciao cia");
-            wassert(actual(str::decode_base64(str::encode_base64("ciao ciao"))) == "ciao ciao");
+            wassert(actual(str::decode_base64(str::encode_base64("ci"))) ==
+                    "ci");
+            wassert(actual(str::decode_base64(str::encode_base64("cia"))) ==
+                    "cia");
+            wassert(actual(str::decode_base64(str::encode_base64("ciao"))) ==
+                    "ciao");
+            wassert(actual(str::decode_base64(str::encode_base64("ciao "))) ==
+                    "ciao ");
+            wassert(actual(str::decode_base64(str::encode_base64("ciao c"))) ==
+                    "ciao c");
+            wassert(actual(str::decode_base64(str::encode_base64("ciao ci"))) ==
+                    "ciao ci");
+            wassert(actual(str::decode_base64(
+                        str::encode_base64("ciao cia"))) == "ciao cia");
+            wassert(actual(str::decode_base64(
+                        str::encode_base64("ciao ciao"))) == "ciao ciao");
         });
     }
 } tests("string");
 
-}
+} // namespace

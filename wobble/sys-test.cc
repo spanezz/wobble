@@ -1,14 +1,14 @@
-#include "tests.h"
 #include "sys.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <cstring>
+#include "tests.h"
 #include <cstdlib>
+#include <cstring>
+#include <fcntl.h>
 #include <set>
-#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <thread>
+#include <unistd.h>
 
 using namespace std;
 using namespace wobble::sys;
@@ -23,490 +23,520 @@ class Tests : public TestCase
     void register_tests() override;
 } test_("sys");
 
-void Tests::register_tests() {
+void Tests::register_tests()
+{
 
-add_method("with_suffix", []() {
-    wassert(actual(with_suffix("foo", "bar")) == "foobar");
-    wassert(actual(with_suffix("foo/bar", ".zip")) == "foo/bar.zip");
-    wassert_throws(std::logic_error, with_suffix("foo/", "bar"));
-    wassert_throws(std::logic_error, with_suffix("", "bar"));
-    wassert_throws(std::logic_error, with_suffix("/", "bar"));
-});
+    add_method("with_suffix", []() {
+        wassert(actual(with_suffix("foo", "bar")) == "foobar");
+        wassert(actual(with_suffix("foo/bar", ".zip")) == "foo/bar.zip");
+        wassert_throws(std::logic_error, with_suffix("foo/", "bar"));
+        wassert_throws(std::logic_error, with_suffix("", "bar"));
+        wassert_throws(std::logic_error, with_suffix("/", "bar"));
+    });
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-add_method("isdir", []() {
-    system("rm -rf testdir");
-    wassert(actual(isdir("testdir")).isfalse());
-    system("touch testdir");
-    wassert(actual(isdir("testdir")).isfalse());
-    system("rm testdir; mkdir testdir");
-    wassert(actual(isdir("testdir")).istrue());
-});
+    add_method("isdir", []() {
+        system("rm -rf testdir");
+        wassert(actual(isdir("testdir")).isfalse());
+        system("touch testdir");
+        wassert(actual(isdir("testdir")).isfalse());
+        system("rm testdir; mkdir testdir");
+        wassert(actual(isdir("testdir")).istrue());
+    });
 
 #pragma GCC diagnostic pop
 
-add_method("abspath", []() {
-    auto cwd = std::filesystem::current_path();
-    wassert(actual(abspath(".")) == cwd);
-    wassert(actual(abspath("foo")) == cwd / "foo");
-    wassert(actual(abspath("foo/")) == cwd / "foo/");
-});
+    add_method("abspath", []() {
+        auto cwd = std::filesystem::current_path();
+        wassert(actual(abspath(".")) == cwd);
+        wassert(actual(abspath("foo")) == cwd / "foo");
+        wassert(actual(abspath("foo/")) == cwd / "foo/");
+    });
 
-add_method("abspath_concurrency", []() {
-    // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118733
-    std::filesystem::path workdir("testdir");
-    rmtree_ifexists(workdir);
-    std::filesystem::create_directory(workdir);
+    add_method("abspath_concurrency", []() {
+        // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118733
+        std::filesystem::path workdir("testdir");
+        rmtree_ifexists(workdir);
+        std::filesystem::create_directory(workdir);
 
-    auto expected = std::filesystem::absolute(workdir) / "dir";
+        auto expected = std::filesystem::absolute(workdir) / "dir";
 
-    auto testpath = workdir / "dir";
-    bool done = false;
+        auto testpath = workdir / "dir";
+        bool done     = false;
 
-    auto glitch = [&done, &testpath] {
-        while (! done)
+        auto glitch = [&done, &testpath] {
+            while (!done)
+            {
+                std::filesystem::remove(testpath);
+                std::filesystem::create_directory(testpath);
+            }
+        };
+
+        std::thread glitcher(glitch);
+
+        int failed_iteration = -1;
+        std::string failed_message;
+        for (unsigned iteration = 0; iteration < 1000; ++iteration)
+            try
+            {
+                wassert(actual(abspath(testpath)) == expected);
+            }
+            catch (std::exception& e)
+            {
+                failed_iteration = iteration;
+                failed_message   = e.what();
+                break;
+            }
+        done = true;
+        glitcher.join();
+
+        if (failed_iteration != -1)
+            wfail_test("abspath failed at iteration " +
+                       std::to_string(failed_iteration) + ": " +
+                       failed_message);
+    });
+
+    add_method("timestamp", []() {
+        using namespace wobble;
+        system("rm -f testfile");
+        wassert(actual(sys::timestamp("testfile", 0)) == 0);
+        write_file("testfile", "");
+        wassert(actual(sys::timestamp("testfile")) != 0);
+        wassert(actual(sys::timestamp("testfile", 0)) != 0);
+        unlink("testfile");
+        wassert(actual(sys::timestamp("testfile", 0)) == 0);
+    });
+
+    add_method("write_file_atomically", []() {
+        string test("ciao");
+        write_file_atomically("testfile", test);
+        string test1 = read_file("testfile");
+        wassert(actual(test1) == test);
+
+        write_file("testfile", "");
+        wassert(actual(read_file("testfile")) == "");
+    });
+
+    add_method("directory_iterate", []() {
+        Path dir("/", O_DIRECTORY);
+
+        set<string> files;
+        for (auto& i : dir)
+            files.insert(i.d_name);
+
+        wassert(actual(files.size()) > 0u);
+        wassert(actual(files.find(".") != files.end()).istrue());
+        wassert(actual(files.find("..") != files.end()).istrue());
+        wassert(actual(files.find("etc") != files.end()).istrue());
+        wassert(actual(files.find("bin") != files.end()).istrue());
+        wassert(actual(files.find("tmp") != files.end()).istrue());
+
+        // Check that the directory can be iterated twice in a row
+        files.clear();
+        for (auto& i : dir)
+            files.insert(i.d_name);
+
+        wassert(actual(files.size()) > 0u);
+        wassert(actual(files.find(".") != files.end()).istrue());
+        wassert(actual(files.find("..") != files.end()).istrue());
+        wassert(actual(files.find("etc") != files.end()).istrue());
+        wassert(actual(files.find("bin") != files.end()).istrue());
+        wassert(actual(files.find("tmp") != files.end()).istrue());
+
+        struct stat st;
+        dir.fstatat("etc", st);
+        wassert(actual(S_ISDIR(st.st_mode)).istrue());
+
+        wassert(
+            actual(dir.fstatat_ifexists(
+                       "wobble_unit_test_file_expected_not_to_be_there", st))
+                .isfalse());
+
+        wassert(actual(dir.faccessat("etc", X_OK)).istrue());
+        wassert(
+            actual(dir.faccessat(
+                       "wobble_unit_test_file_expected_not_to_be_there", F_OK))
+                .isfalse());
+
+        auto e = wassert_throws(std::runtime_error,
+                                dir.fstatat("does-not-exist", st));
+        wassert(actual(e.what()).contains("cannot fstatat does-not-exist"));
+    });
+
+    add_method("openat_ifexists", []() {
+        Path dir("/etc", O_DIRECTORY);
+
+        int fd = dir.openat_ifexists("passwd", O_RDONLY);
+        wassert(actual(fd) != -1);
+        ::close(fd);
+
+        fd = dir.openat_ifexists("does-not-exist-really", O_RDONLY);
+        wassert(actual(fd) == -1);
+    });
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    add_method("makedirs", []() {
+        wassert(actual(makedirs("makedirs/foo/bar/baz")).istrue());
+        wassert(actual(std::filesystem::is_directory("makedirs/foo/bar/baz"))
+                    .istrue());
+        wassert(actual(makedirs("makedirs/foo/bar/baz")).isfalse());
+        wassert(actual(std::filesystem::is_directory("makedirs/foo/bar/baz"))
+                    .istrue());
+    });
+#pragma GCC diagnostic pop
+
+    add_method("rmtree", []() {
+        namespace fs = std::filesystem;
+        auto root    = fs::path("foo/bar");
+        fs::create_directories(root / "baz");
+        fs::create_directories(root / "gnat");
+        write_file("foo/bar/baz.txt", "baz");
+        write_file("foo/bar/baz/gnat.txt", "gnat");
+        write_file("foo/bar.txt", "bar");
+        rmtree("foo");
+        wassert(actual_file("foo").not_exists());
+
+        rmtree_ifexists("foo");
+    });
+
+    add_method("which",
+               []() { wassert(actual(which("ls")).path_endswith("bin/ls")); });
+
+    add_method("unlink_ifexists", []() {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+        std::filesystem::path fname = "test_unlink_ifexists";
+
+        unlink_ifexists(fname);
+        wassert(actual(unlink_ifexists(fname)).isfalse());
+        write_file(fname, "test");
+        wassert(actual(fname).exists());
+        wassert(actual(unlink_ifexists(fname)).istrue());
+        wassert(actual(fname).not_exists());
+#pragma GCC diagnostic pop
+    });
+
+    add_method("rename_ifexists", []() {
+        std::filesystem::path fname  = "test_rename_ifexists";
+        std::filesystem::path fname1 = "test_rename_ifexists1";
+
+        std::filesystem::remove(fname);
+        std::filesystem::remove(fname1);
+        wassert(actual(rename_ifexists(fname, fname1)).isfalse());
+
+        write_file(fname, "test");
+        wassert(actual(fname).exists());
+        wassert(actual(fname1).not_exists());
+
+        wassert(actual(rename_ifexists(fname, fname1)).istrue());
+        wassert(actual(fname).not_exists());
+        wassert(actual(fname1).exists());
+
+        unlink(fname1);
+    });
+
+    add_method("rename", []() {
+        std::filesystem::path fname  = "test_rename";
+        std::filesystem::path fname1 = "test_rename1";
+
+        write_file(fname, "test");
+        rename(fname, fname1);
+        wassert(actual(fname).not_exists());
+        wassert(actual(fname1).exists());
+        unlink(fname1);
+    });
+
+    add_method("file", []() {
+        File f("test", O_RDWR | O_CREAT, 0666);
+        wassert(actual(f.write("foo", 3)) == 3u);
+        wassert(actual(f.lseek(0)) == 0);
+        char buf[4];
+        wassert(actual(f.read(buf, 3)) == 3u);
+        buf[3] = 0;
+        wassert(actual(buf) == "foo");
+
+        wassert(actual(f.pwrite("ar", 2, 1)) == 2u);
+        wassert(actual(f.pread(buf, 3, 0)) == 3u);
+        wassert(actual(buf) == "far");
+
+        wassert(actual(f.pwrite(string("oz"), 1)) == 2u);
+        wassert(actual(f.pread(buf, 3, 0)) == 3u);
+        wassert(actual(buf) == "foz");
+
+        f.close();
+
+        wassert(actual(f.open_ifexists(O_RDONLY)));
+        f.close();
+
+        File f1("test-does-not-exists");
+        wassert(actual(f1.open_ifexists(O_RDONLY)).isfalse());
+    });
+
+    add_method("ofd_lock", []() {
+        File f1("test", O_RDWR | O_CREAT, 0666);
+        File f2("test", O_RDWR);
+
+        ::flock lk1;
+        memset(&lk1, 0, sizeof(lk1));
+        ::flock lk2;
+        memset(&lk2, 0, sizeof(lk2));
+
+        lk1.l_type   = F_RDLCK;
+        lk1.l_whence = SEEK_SET;
+        lk1.l_start  = 0;
+        lk1.l_len    = 10;
+        wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
+
+        lk2.l_type   = F_RDLCK;
+        lk2.l_whence = SEEK_SET;
+        lk2.l_start  = 0;
+        lk2.l_len    = 10;
+        wassert(actual(f2.ofd_setlkw(lk2, true)).istrue());
+
+        lk2.l_type = F_WRLCK;
+        wassert(actual(f2.ofd_setlk(lk2)).isfalse());
+
+        ::flock lk3;
+        memset(&lk3, 0, sizeof(lk3));
+        lk3.l_type   = F_WRLCK;
+        lk3.l_whence = SEEK_SET;
+        lk3.l_start  = 5;
+        lk3.l_len    = 100;
+        wassert(actual(f2.ofd_getlk(lk3)).isfalse());
+        wassert(actual(lk3.l_type) == F_RDLCK);
+        wassert(actual(lk3.l_whence) == SEEK_SET);
+        wassert(actual(lk3.l_start) == 0);
+        wassert(actual(lk3.l_len) == 10);
+
+        lk1.l_type = F_UNLCK;
+        wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
+
+        wassert(actual(f2.ofd_setlk(lk2)).istrue());
+    });
+
+    add_method("preserve_file_times", []() {
+        File test("test", O_RDWR | O_CREAT, 0666);
+        ::timespec ts[2] = {
+            {1500000000, 0},
+            {1500000000, 0}
+        };
+        test.futimens(ts);
+
         {
-            std::filesystem::remove(testpath);
-            std::filesystem::create_directory(testpath);
+            PreserveFileTimes pt(test);
+            test.write("test", 4);
         }
-    };
 
-    std::thread glitcher(glitch);
+        struct stat st;
+        test.fstat(st);
 
-    int failed_iteration = -1;
-    std::string failed_message;
-    for (unsigned iteration = 0; iteration < 1000; ++iteration)
-        try {
-            wassert(actual(abspath(testpath)) == expected);
-        } catch (std::exception& e) {
-            failed_iteration = iteration;
-            failed_message = e.what();
-            break;
+        wassert(actual(st.st_atim.tv_sec) == 1500000000);
+        wassert(actual(st.st_atim.tv_nsec) == 0);
+        wassert(actual(st.st_mtim.tv_sec) == 1500000000);
+        wassert(actual(st.st_mtim.tv_nsec) == 0);
+    });
+
+    add_method("touch", []() {
+        write_file("test", "foo");
+        touch("test", 123456);
+
+        struct stat st;
+        stat("test", st);
+
+        wassert(actual(st.st_atim.tv_sec) == 123456);
+        wassert(actual(st.st_atim.tv_nsec) == 0);
+        wassert(actual(st.st_mtim.tv_sec) == 123456);
+        wassert(actual(st.st_mtim.tv_nsec) == 0);
+    });
+
+    add_method("timespec_elapsed", []() {
+        ::timespec begin, until;
+
+        begin.tv_sec  = 100;
+        begin.tv_nsec = 50;
+        until.tv_sec  = 100;
+        until.tv_nsec = 60;
+        wassert(actual(timesec_elapsed(begin, until)) == 10u);
+
+        begin.tv_sec  = 100;
+        begin.tv_nsec = 50;
+        until.tv_sec  = 101;
+        until.tv_nsec = 40;
+        wassert(actual(timesec_elapsed(begin, until)) == 1000000000u - 10u);
+
+        begin.tv_sec  = 100;
+        begin.tv_nsec = 50;
+        until.tv_sec  = 101;
+        until.tv_nsec = 60;
+        wassert(actual(timesec_elapsed(begin, until)) == 1000000000u + 10u);
+
+        begin.tv_sec  = 100;
+        begin.tv_nsec = 0;
+        until.tv_sec  = 101;
+        until.tv_nsec = 0;
+        wassert(actual(timesec_elapsed(begin, until)) == 1000000000u);
+
+        begin.tv_sec  = 101;
+        begin.tv_nsec = 0;
+        until.tv_sec  = 100;
+        until.tv_nsec = 0;
+        wassert(actual(timesec_elapsed(begin, until)) == 0u);
+
+        begin.tv_sec  = 100;
+        begin.tv_nsec = 5;
+        until.tv_sec  = 100;
+        until.tv_nsec = 4;
+        wassert(actual(timesec_elapsed(begin, until)) == 0u);
+    });
+
+    add_method("rlimit", []() {
+        File fd("testfile", O_WRONLY | O_CREAT | O_TRUNC);
+
+        ::rlimit rlim_pre;
+        getrlimit(RLIMIT_NOFILE, rlim_pre);
+
+        {
+            OverrideRlimit ov(RLIMIT_NOFILE, 0);
+            ::rlimit rlim_cur;
+            getrlimit(RLIMIT_NOFILE, rlim_cur);
+            wassert(actual(rlim_cur.rlim_max) == rlim_pre.rlim_max);
+            wassert(actual(rlim_cur.rlim_cur) == 0u);
+
+            int dupfd = ::dup(fd);
+            if (dupfd != -1)
+                ::close(dupfd);
+            wassert(actual(dupfd == -1));
+            wassert(actual(errno) == EMFILE);
         }
-    done = true;
-    glitcher.join();
 
-    if (failed_iteration != -1)
-        wfail_test("abspath failed at iteration " + std::to_string(failed_iteration) + ": " + failed_message);
-});
-
-add_method("timestamp", []() {
-    using namespace wobble;
-    system("rm -f testfile");
-    wassert(actual(sys::timestamp("testfile", 0)) == 0);
-    write_file("testfile", "");
-    wassert(actual(sys::timestamp("testfile")) != 0);
-    wassert(actual(sys::timestamp("testfile", 0)) != 0);
-    unlink("testfile");
-    wassert(actual(sys::timestamp("testfile", 0)) == 0);
-});
-
-add_method("write_file_atomically", []() {
-    string test("ciao");
-    write_file_atomically("testfile", test);
-    string test1 = read_file("testfile");
-    wassert(actual(test1) == test);
-
-    write_file("testfile", "");
-    wassert(actual(read_file("testfile")) == "");
-});
-
-add_method("directory_iterate", []() {
-    Path dir("/", O_DIRECTORY);
-
-    set<string> files;
-    for (auto& i: dir)
-        files.insert(i.d_name);
-
-    wassert(actual(files.size()) > 0u);
-    wassert(actual(files.find(".") != files.end()).istrue());
-    wassert(actual(files.find("..") != files.end()).istrue());
-    wassert(actual(files.find("etc") != files.end()).istrue());
-    wassert(actual(files.find("bin") != files.end()).istrue());
-    wassert(actual(files.find("tmp") != files.end()).istrue());
-
-    // Check that the directory can be iterated twice in a row
-    files.clear();
-    for (auto& i: dir)
-        files.insert(i.d_name);
-
-    wassert(actual(files.size()) > 0u);
-    wassert(actual(files.find(".") != files.end()).istrue());
-    wassert(actual(files.find("..") != files.end()).istrue());
-    wassert(actual(files.find("etc") != files.end()).istrue());
-    wassert(actual(files.find("bin") != files.end()).istrue());
-    wassert(actual(files.find("tmp") != files.end()).istrue());
-
-    struct stat st;
-    dir.fstatat("etc", st);
-    wassert(actual(S_ISDIR(st.st_mode)).istrue());
-
-    wassert(actual(dir.fstatat_ifexists("wobble_unit_test_file_expected_not_to_be_there", st)).isfalse());
-
-    wassert(actual(dir.faccessat("etc", X_OK)).istrue());
-    wassert(actual(dir.faccessat("wobble_unit_test_file_expected_not_to_be_there", F_OK)).isfalse());
-
-    auto e = wassert_throws(std::runtime_error, dir.fstatat("does-not-exist", st));
-    wassert(actual(e.what()).contains("cannot fstatat does-not-exist"));
-});
-
-add_method("openat_ifexists", []() {
-    Path dir("/etc", O_DIRECTORY);
-
-    int fd = dir.openat_ifexists("passwd", O_RDONLY);
-    wassert(actual(fd) != -1);
-    ::close(fd);
-
-    fd = dir.openat_ifexists("does-not-exist-really", O_RDONLY);
-    wassert(actual(fd) == -1);
-});
-
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-add_method("makedirs", []() {
-    wassert(actual(makedirs("makedirs/foo/bar/baz")).istrue());
-    wassert(actual(std::filesystem::is_directory("makedirs/foo/bar/baz")).istrue());
-    wassert(actual(makedirs("makedirs/foo/bar/baz")).isfalse());
-    wassert(actual(std::filesystem::is_directory("makedirs/foo/bar/baz")).istrue());
-});
-#pragma GCC diagnostic pop
-
-add_method("rmtree", []() {
-    namespace fs = std::filesystem;
-    auto root = fs::path("foo/bar");
-    fs::create_directories(root / "baz");
-    fs::create_directories(root / "gnat");
-    write_file("foo/bar/baz.txt", "baz");
-    write_file("foo/bar/baz/gnat.txt", "gnat");
-    write_file("foo/bar.txt", "bar");
-    rmtree("foo");
-    wassert(actual_file("foo").not_exists());
-
-    rmtree_ifexists("foo");
-});
-
-add_method("which", []() {
-    wassert(actual(which("ls")).path_endswith("bin/ls"));
-});
-
-add_method("unlink_ifexists", []() {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    std::filesystem::path fname = "test_unlink_ifexists";
-
-    unlink_ifexists(fname);
-    wassert(actual(unlink_ifexists(fname)).isfalse());
-    write_file(fname, "test");
-    wassert(actual(fname).exists());
-    wassert(actual(unlink_ifexists(fname)).istrue());
-    wassert(actual(fname).not_exists());
-#pragma GCC diagnostic pop
-});
-
-add_method("rename_ifexists", []() {
-    std::filesystem::path fname = "test_rename_ifexists";
-    std::filesystem::path fname1 = "test_rename_ifexists1";
-
-    std::filesystem::remove(fname);
-    std::filesystem::remove(fname1);
-    wassert(actual(rename_ifexists(fname, fname1)).isfalse());
-
-    write_file(fname, "test");
-    wassert(actual(fname).exists());
-    wassert(actual(fname1).not_exists());
-
-    wassert(actual(rename_ifexists(fname, fname1)).istrue());
-    wassert(actual(fname).not_exists());
-    wassert(actual(fname1).exists());
-
-    unlink(fname1);
-});
-
-add_method("rename", []() {
-    std::filesystem::path fname = "test_rename";
-    std::filesystem::path fname1 = "test_rename1";
-
-    write_file(fname, "test");
-    rename(fname, fname1);
-    wassert(actual(fname).not_exists());
-    wassert(actual(fname1).exists());
-    unlink(fname1);
-});
-
-add_method("file", []() {
-    File f("test", O_RDWR | O_CREAT, 0666);
-    wassert(actual(f.write("foo", 3)) == 3u);
-    wassert(actual(f.lseek(0)) == 0);
-    char buf[4];
-    wassert(actual(f.read(buf, 3)) == 3u);
-    buf[3] = 0;
-    wassert(actual(buf) == "foo");
-
-    wassert(actual(f.pwrite("ar", 2, 1)) == 2u);
-    wassert(actual(f.pread(buf, 3, 0)) == 3u);
-    wassert(actual(buf) == "far");
-
-    wassert(actual(f.pwrite(string("oz"), 1)) == 2u);
-    wassert(actual(f.pread(buf, 3, 0)) == 3u);
-    wassert(actual(buf) == "foz");
-
-    f.close();
-
-    wassert(actual(f.open_ifexists(O_RDONLY)));
-    f.close();
-
-    File f1("test-does-not-exists");
-    wassert(actual(f1.open_ifexists(O_RDONLY)).isfalse());
-});
-
-add_method("ofd_lock", []() {
-    File f1("test", O_RDWR | O_CREAT, 0666);
-    File f2("test", O_RDWR);
-
-    ::flock lk1;
-    memset(&lk1, 0, sizeof(lk1));
-    ::flock lk2;
-    memset(&lk2, 0, sizeof(lk2));
-
-    lk1.l_type = F_RDLCK;
-    lk1.l_whence = SEEK_SET;
-    lk1.l_start = 0;
-    lk1.l_len = 10;
-    wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
-
-    lk2.l_type = F_RDLCK;
-    lk2.l_whence = SEEK_SET;
-    lk2.l_start = 0;
-    lk2.l_len = 10;
-    wassert(actual(f2.ofd_setlkw(lk2, true)).istrue());
-
-    lk2.l_type = F_WRLCK;
-    wassert(actual(f2.ofd_setlk(lk2)).isfalse());
-
-    ::flock lk3;
-    memset(&lk3, 0, sizeof(lk3));
-    lk3.l_type = F_WRLCK;
-    lk3.l_whence = SEEK_SET;
-    lk3.l_start = 5;
-    lk3.l_len = 100;
-    wassert(actual(f2.ofd_getlk(lk3)).isfalse());
-    wassert(actual(lk3.l_type) == F_RDLCK);
-    wassert(actual(lk3.l_whence) == SEEK_SET);
-    wassert(actual(lk3.l_start) == 0);
-    wassert(actual(lk3.l_len) == 10);
-
-    lk1.l_type = F_UNLCK;
-    wassert(actual(f1.ofd_setlkw(lk1, true)).istrue());
-
-    wassert(actual(f2.ofd_setlk(lk2)).istrue());
-});
-
-add_method("preserve_file_times", []() {
-    File test("test", O_RDWR | O_CREAT, 0666);
-    ::timespec ts[2] = { { 1500000000, 0 }, { 1500000000, 0 } };
-    test.futimens(ts);
-
-    {
-        PreserveFileTimes pt(test);
-        test.write("test", 4);
-    }
-
-    struct stat st;
-    test.fstat(st);
-
-    wassert(actual(st.st_atim.tv_sec) == 1500000000);
-    wassert(actual(st.st_atim.tv_nsec) == 0);
-    wassert(actual(st.st_mtim.tv_sec) == 1500000000);
-    wassert(actual(st.st_mtim.tv_nsec) == 0);
-});
-
-add_method("touch", []() {
-    write_file("test", "foo");
-    touch("test", 123456);
-
-    struct stat st;
-    stat("test", st);
-
-    wassert(actual(st.st_atim.tv_sec) == 123456);
-    wassert(actual(st.st_atim.tv_nsec) == 0);
-    wassert(actual(st.st_mtim.tv_sec) == 123456);
-    wassert(actual(st.st_mtim.tv_nsec) == 0);
-});
-
-add_method("timespec_elapsed", []() {
-    ::timespec begin, until;
-
-    begin.tv_sec = 100; begin.tv_nsec = 50;
-    until.tv_sec = 100; until.tv_nsec = 60;
-    wassert(actual(timesec_elapsed(begin, until)) == 10u);
-
-    begin.tv_sec = 100; begin.tv_nsec = 50;
-    until.tv_sec = 101; until.tv_nsec = 40;
-    wassert(actual(timesec_elapsed(begin, until)) == 1000000000u - 10u);
-
-    begin.tv_sec = 100; begin.tv_nsec = 50;
-    until.tv_sec = 101; until.tv_nsec = 60;
-    wassert(actual(timesec_elapsed(begin, until)) == 1000000000u + 10u);
-
-    begin.tv_sec = 100; begin.tv_nsec = 0;
-    until.tv_sec = 101; until.tv_nsec = 0;
-    wassert(actual(timesec_elapsed(begin, until)) == 1000000000u);
-
-    begin.tv_sec = 101; begin.tv_nsec = 0;
-    until.tv_sec = 100; until.tv_nsec = 0;
-    wassert(actual(timesec_elapsed(begin, until)) == 0u);
-
-    begin.tv_sec = 100; begin.tv_nsec = 5;
-    until.tv_sec = 100; until.tv_nsec = 4;
-    wassert(actual(timesec_elapsed(begin, until)) == 0u);
-});
-
-add_method("rlimit", []() {
-    File fd("testfile", O_WRONLY | O_CREAT | O_TRUNC);
-
-    ::rlimit rlim_pre;
-    getrlimit(RLIMIT_NOFILE, rlim_pre);
-
-    {
-        OverrideRlimit ov(RLIMIT_NOFILE, 0);
-        ::rlimit rlim_cur;
-        getrlimit(RLIMIT_NOFILE, rlim_cur);
-        wassert(actual(rlim_cur.rlim_max) == rlim_pre.rlim_max);
-        wassert(actual(rlim_cur.rlim_cur) == 0u);
+        ::rlimit rlim_post;
+        getrlimit(RLIMIT_NOFILE, rlim_post);
+        wassert(actual(rlim_post.rlim_max) == rlim_pre.rlim_max);
+        wassert(actual(rlim_post.rlim_cur) == rlim_pre.rlim_cur);
 
         int dupfd = ::dup(fd);
-        if (dupfd != -1) ::close(dupfd);
-        wassert(actual(dupfd == -1));
-        wassert(actual(errno) == EMFILE);
-    }
+        if (dupfd != -1)
+            ::close(dupfd);
+        wassert(actual(dupfd >= 0));
+    });
 
-    ::rlimit rlim_post;
-    getrlimit(RLIMIT_NOFILE, rlim_post);
-    wassert(actual(rlim_post.rlim_max) == rlim_pre.rlim_max);
-    wassert(actual(rlim_post.rlim_cur) == rlim_pre.rlim_cur);
+    add_method("tempfile", []() {
+        std::filesystem::path path;
+        {
+            Tempfile tf;
+            wassert(actual(tf.path()).exists());
+            path = tf.path();
+        }
+        wassert(actual(path).not_exists());
 
-    int dupfd = ::dup(fd);
-    if (dupfd != -1) ::close(dupfd);
-    wassert(actual(dupfd >= 0));
-});
+        {
+            Tempfile tf;
+            wassert(actual(tf.path()).exists());
+            tf.unlink_on_exit(false);
+            path = tf.path();
+        }
+        wassert(actual_file(path).exists());
 
-add_method("tempfile", []() {
-    std::filesystem::path path;
-    {
-        Tempfile tf;
-        wassert(actual(tf.path()).exists());
-        path = tf.path();
-    }
-    wassert(actual(path).not_exists());
+        unlink(path);
 
-    {
-        Tempfile tf;
-        wassert(actual(tf.path()).exists());
-        tf.unlink_on_exit(false);
-        path = tf.path();
-    }
-    wassert(actual_file(path).exists());
+        {
+            Tempfile tf;
+            wassert(actual(tf.path()).exists());
+            tf.unlink();
+            wassert(actual(tf.path()).not_exists());
+        }
 
-    unlink(path);
+        {
+            Tempfile tf("wibble-test-");
+            wassert(actual(tf.path().filename().string())
+                        .startswith("wibble-test-"));
+        }
+    });
 
-    {
-        Tempfile tf;
-        wassert(actual(tf.path()).exists());
-        tf.unlink();
-        wassert(actual(tf.path()).not_exists());
-    }
+    add_method("mkdtemp", []() {
+        std::filesystem::path path = Path::mkdtemp("./test");
+        wassert_true(std::filesystem::is_directory(path));
+        wassert(actual(path.string()).startswith("./test"));
+        rmdir(path);
+    });
 
-    {
-        Tempfile tf("wibble-test-");
-        wassert(actual(tf.path().filename().string()).startswith("wibble-test-"));
-    }
-});
+    add_method("tempdir", []() {
+        std::filesystem::path path;
+        {
+            Tempdir dir;
+            wassert_true(std::filesystem::is_directory(dir.path()));
+            FileDescriptor fd(dir.openat("test", O_WRONLY | O_CREAT));
+            fd.close();
+            wassert_true(std::filesystem::is_regular_file(dir.path() / "test"));
+            path = dir.path();
+        }
+        wassert_false(exists(path));
 
-add_method("mkdtemp", []() {
-    std::filesystem::path path = Path::mkdtemp("./test");
-    wassert_true(std::filesystem::is_directory(path));
-    wassert(actual(path.string()).startswith("./test"));
-    rmdir(path);
-});
+        {
+            Tempdir dir;
+            wassert_true(std::filesystem::is_directory(dir.path()));
+            dir.rmtree_on_exit(false);
+            path = dir.path();
+        }
+        wassert_true(exists(path));
+        rmtree(path);
+    });
 
-add_method("tempdir", []() {
-    std::filesystem::path path;
-    {
+    add_method("mkdirat", []() {
         Tempdir dir;
-        wassert_true(std::filesystem::is_directory(dir.path()));
-        FileDescriptor fd(dir.openat("test", O_WRONLY | O_CREAT));
-        fd.close();
-        wassert_true(std::filesystem::is_regular_file(dir.path() / "test"));
-        path = dir.path();
-    }
-    wassert_false(exists(path));
+        dir.mkdirat("test");
+        wassert_true(std::filesystem::is_directory(dir.path() / "test"));
+    });
 
-    {
+    add_method("symlinkat", []() {
         Tempdir dir;
-        wassert_true(std::filesystem::is_directory(dir.path()));
-        dir.rmtree_on_exit(false);
-        path = dir.path();
-    }
-    wassert_true(exists(path));
-    rmtree(path);
-});
+        dir.symlinkat("/etc", "etc");
 
-add_method("mkdirat", []() {
-    Tempdir dir;
-    dir.mkdirat("test");
-    wassert_true(std::filesystem::is_directory(dir.path() / "test"));
-});
+        struct stat st;
+        wassert_true(dir.lstatat_ifexists("etc", st));
 
-add_method("symlinkat", []() {
-    Tempdir dir;
-    dir.symlinkat("/etc", "etc");
+        wassert(actual(dir.readlinkat("etc")) == "/etc");
+    });
 
-    struct stat st;
-    wassert_true(dir.lstatat_ifexists("etc", st));
-
-    wassert(actual(dir.readlinkat("etc")) == "/etc");
-});
-
-add_method("override_environment", []() {
-    const char* envname = "WOBBLE_TEST_ENVVAR";
-    unsetenv(envname);
-    wassert(actual(getenv(envname)) == nullptr);
-
-    // Unset while unset
-    {
-        OverrideEnvironment oe(envname);
+    add_method("override_environment", []() {
+        const char* envname = "WOBBLE_TEST_ENVVAR";
+        unsetenv(envname);
         wassert(actual(getenv(envname)) == nullptr);
-    }
-    wassert(actual(getenv(envname)) == nullptr);
 
-    // Set while unset
-    {
-        OverrideEnvironment oe(envname, "value");
-        wassert(actual(getenv(envname)) =="value");
-    }
-    wassert(actual(getenv(envname)) == nullptr);
-
-    setenv(envname, "value", 1);
-
-    // Unset while set
-    {
-        OverrideEnvironment oe(envname);
+        // Unset while unset
+        {
+            OverrideEnvironment oe(envname);
+            wassert(actual(getenv(envname)) == nullptr);
+        }
         wassert(actual(getenv(envname)) == nullptr);
-    }
-    wassert(actual(getenv(envname)) == "value");
 
-    // Set while set
-    {
-        OverrideEnvironment oe(envname, "other");
-        wassert(actual(getenv(envname)) =="other");
-    }
-    wassert(actual(getenv(envname)) == "value");
+        // Set while unset
+        {
+            OverrideEnvironment oe(envname, "value");
+            wassert(actual(getenv(envname)) == "value");
+        }
+        wassert(actual(getenv(envname)) == nullptr);
 
-    unsetenv(envname);
-});
+        setenv(envname, "value", 1);
 
+        // Unset while set
+        {
+            OverrideEnvironment oe(envname);
+            wassert(actual(getenv(envname)) == nullptr);
+        }
+        wassert(actual(getenv(envname)) == "value");
+
+        // Set while set
+        {
+            OverrideEnvironment oe(envname, "other");
+            wassert(actual(getenv(envname)) == "other");
+        }
+        wassert(actual(getenv(envname)) == "value");
+
+        unsetenv(envname);
+    });
 }
 
 #if 0
@@ -652,4 +682,4 @@ struct TestFs {
 };
 
 #endif
-}
+} // namespace

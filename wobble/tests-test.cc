@@ -1,5 +1,5 @@
-#include "tests.h"
 #include "sys.h"
+#include "tests.h"
 
 using namespace std;
 using namespace wobble;
@@ -109,7 +109,9 @@ class Tests : public TestCase
             wassert(actual("foo") >= string("bar"));
 
             std::vector<uint8_t> buf;
-            buf.push_back('a'); buf.push_back('b'); buf.push_back('c');
+            buf.push_back('a');
+            buf.push_back('b');
+            buf.push_back('c');
             wassert(actual(buf) == "abc");
             wassert(actual(string("abc")) == buf);
         });
@@ -141,7 +143,9 @@ class Tests : public TestCase
         });
 
         add_method("function", []() {
-            wassert(actual_function([]() { throw std::runtime_error("foobar"); }).throws("ooba"));
+            wassert(actual_function([]() {
+                        throw std::runtime_error("foobar");
+                    }).throws("ooba"));
         });
 
         add_method("skip", []() {
@@ -152,7 +156,8 @@ class Tests : public TestCase
             sys::write_file("testfile", "");
             wassert(actual_file("testfile").empty());
             wassert(actual_file("testfile").contents_equal(""));
-            wassert(actual_file("testfile").contents_equal(std::vector<uint8_t>()));
+            wassert(
+                actual_file("testfile").contents_equal(std::vector<uint8_t>()));
 
             sys::write_file("testfile", "foo");
             wassert(actual_file("testfile").exists());
@@ -173,20 +178,24 @@ class Tests : public TestCase
             sys::write_file("testfile", "foo\nbar\n");
             wassert(actual_file("testfile").contents_equal({"foo", "bar"}));
             wassert(actual_file("testfile").contents_match({"^foo", "bar$"}));
-            wassert(actual_file("testfile").contents_match({"^foo", "(maybe)?", "bar$"}));
-            wassert(actual_file("testfile").contents_match({"^foo", "bar$", "(maybe)?"}));
-            wassert(actual_file("testfile").contents_match({"(maybe)?", "^foo", "bar$"}));
+            wassert(actual_file("testfile")
+                        .contents_match({"^foo", "(maybe)?", "bar$"}));
+            wassert(actual_file("testfile")
+                        .contents_match({"^foo", "bar$", "(maybe)?"}));
+            wassert(actual_file("testfile")
+                        .contents_match({"(maybe)?", "^foo", "bar$"}));
         });
 
         add_method("empty_skipped");
 
-        add_method("throws", []{
-            const auto e = wassert_throws(std::runtime_error, throw std::runtime_error("expected exception"));
+        add_method("throws", [] {
+            const auto e =
+                wassert_throws(std::runtime_error,
+                               throw std::runtime_error("expected exception"));
             wassert(actual(e.what()) == "expected exception");
         });
     }
 } tests("tests");
-
 
 struct ValueFixture : public wobble::tests::Fixture
 {
@@ -199,15 +208,16 @@ struct TestFixture : public FixtureTestCase<ValueFixture>
 
     void register_tests() override
     {
-        add_method("fixture", [](Fixture& f) {
-            wassert(actual(f.val) == 0);
-        });
+        add_method("fixture", [](Fixture& f) { wassert(actual(f.val) == 0); });
     }
 } tests1("tests_fixture");
 
 struct SkipFixture : public wobble::tests::Fixture
 {
-    SkipFixture() { throw TestSkipped("This test case is intentionally skipped"); }
+    SkipFixture()
+    {
+        throw TestSkipped("This test case is intentionally skipped");
+    }
 };
 
 struct TestSkipFixture : public FixtureTestCase<SkipFixture>
@@ -216,11 +226,9 @@ struct TestSkipFixture : public FixtureTestCase<SkipFixture>
 
     void register_tests() override
     {
-        add_method("fails", [](Fixture&) {
-            wfail_test("This should never run");
-        });
+        add_method("fails",
+                   [](Fixture&) { wfail_test("This should never run"); });
     }
 } tests2("tests_skipfixture");
 
-}
-
+} // namespace
