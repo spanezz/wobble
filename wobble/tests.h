@@ -18,11 +18,9 @@
 #include <string>
 #include <vector>
 
-namespace wobble {
-namespace tests {
+namespace wobble::tests {
 struct LocationInfo;
-}
-} // namespace wobble
+} // namespace wobble::tests
 
 /*
  * These global arguments will be shadowed by local variables in functions that
@@ -33,8 +31,7 @@ struct LocationInfo;
  */
 extern const wobble::tests::LocationInfo wobble_test_location_info;
 
-namespace wobble {
-namespace tests {
+namespace wobble::tests {
 
 /**
  * Add information to the test backtrace for the tests run in the current
@@ -851,6 +848,5 @@ public:
     }
 };
 
-} // namespace tests
-} // namespace wobble
+} // namespace wobble::tests
 #endif

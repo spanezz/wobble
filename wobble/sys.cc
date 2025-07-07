@@ -8,6 +8,7 @@
 #include <exception>
 #include <fcntl.h>
 #include <sstream>
+#include <string>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -16,14 +17,6 @@
 #include <utime.h>
 
 using namespace std::literals;
-
-namespace {
-
-inline const char* to_cstring(const std::string& s) { return s.c_str(); }
-
-inline const char* to_cstring(const char* s) { return s; }
-
-} // namespace
 
 namespace wobble {
 namespace sys {

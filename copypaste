@@ -2,17 +2,18 @@
 
 import argparse
 import os
+from pathlib import Path
 
 
 class Copypaste:
-    def __init__(self, namespace, subdir):
+    def __init__(self, namespace: str, subdir: Path) -> None:
         # Destination namespace
         self.namespace = namespace
         # Relative directory where the destination files are to be found in the
         # target process
         self.subdir = subdir
 
-    def convert(self, buf):
+    def convert(self, buf: bytes) -> bytes:
         if self.namespace:
             dest_namespace = self.namespace.encode("utf-8")
             dest_location_info = (
@@ -20,53 +21,45 @@ class Copypaste:
             ).encode("utf-8")
             dest_const = self.namespace.upper().replace("::", "_").encode("utf-8")
             ns_components = self.namespace.split("::")
-            ns_open = "".join(
-                "namespace {} {{\n".format(x) for x in ns_components
-            ).encode("utf-8")
-            ns_close = "".join("\n}" for x in range(len(ns_components) + 1)).encode(
-                "utf-8"
-            )
+            ns_open = "".join("namespace " + "::".join(ns_components)).encode("utf-8")
 
         # Replace namespace and const names
         if self.namespace:
             buf = buf.replace(b"wobble_test_location_info", dest_location_info)
-            buf = buf.replace(b"namespace wobble {\n", ns_open)
-            buf = buf.replace(b"\n}\n}", ns_close)
+            buf = buf.replace(b"namespace wobble\n", ns_open)
             buf = buf.replace(b"wobble", dest_namespace)
             buf = buf.replace(b"wobble".upper(), dest_const)
 
         return buf
 
-    def generate(self, srcdir, destdir):
+    def generate(self, srcdir: Path, destdir: Path) -> None:
         """
         Copy the wobble sources to destdir, applying the transformations defined in
         args
         """
         for root, dirnames, filenames in os.walk(srcdir):
             if self.subdir:
-                destpath = os.path.join(
-                    destdir, self.subdir, os.path.relpath(root, srcdir)
-                )
+                destpath = destdir / self.subdir / srcdir.relative_to(Path(root))
             else:
-                destpath = os.path.join(destdir, os.path.relpath(root, srcdir))
+                destpath = destdir / srcdir.relative_to(Path(root))
 
             for fn in filenames:
                 if fn.endswith("-test.cc"):
                     continue
                 if not fn.endswith(".h") and not fn.endswith(".cc"):
                     continue
-                os.makedirs(destpath, exist_ok=True)
+                destpath.mkdir(parents=True, exist_ok=True)
 
                 with open(os.path.join(root, fn), "rb") as fd:
                     buf = fd.read()
 
                 buf = self.convert(buf)
 
-                with open(os.path.join(destpath, fn), "rb") as fd:
+                with (destpath / fn).open("rb") as fd:
                     if buf == fd.read():
                         continue
 
-                with open(os.path.join(destpath, fn), "wb") as fd:
+                with (destpath / fn).open("wb") as fd:
                     fd.write(buf)
 
 
@@ -80,14 +73,17 @@ def main():
     parser.add_argument(
         "--subdir",
         action="store",
+        type=Path,
         help="subdirectory for the code in the target project",
     )
-    parser.add_argument("destdir", action="store", help="destination directory")
+    parser.add_argument(
+        "destdir", type=Path, action="store", help="destination directory"
+    )
 
     args = parser.parse_args()
 
     copypaste = Copypaste(args.namespace, args.subdir)
-    copypaste.generate("wobble", args.destdir)
+    copypaste.generate(Path("wobble"), args.destdir)
 
 
 if __name__ == "__main__":

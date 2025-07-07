@@ -5,8 +5,7 @@
 #include <sys/types.h>
 #include <vector>
 
-namespace wobble {
-namespace subprocess {
+namespace wobble::subprocess {
 
 enum class Redirect {
     /** Redirect the file descriptor to a pipe. The variabile will be set to the
@@ -185,7 +184,6 @@ public:
     void setenv(const std::string& key, const std::string& val);
 };
 
-} // namespace subprocess
-} // namespace wobble
+} // namespace wobble::subprocess
 
 #endif

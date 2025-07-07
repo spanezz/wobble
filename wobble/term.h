@@ -11,8 +11,7 @@
 #include <cstdio>
 #include <string>
 
-namespace wobble {
-namespace term {
+namespace wobble::term {
 
 struct Terminal
 {
@@ -50,7 +49,6 @@ struct Terminal
     operator FILE*() { return out; }
 };
 
-} // namespace term
-} // namespace wobble
+} // namespace wobble::term
 
 #endif

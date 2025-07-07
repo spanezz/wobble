@@ -6,13 +6,11 @@
 #include <string>
 #include <vector>
 
-namespace wobble {
-
-namespace term {
+namespace wobble::term {
 struct Terminal;
 }
 
-namespace tests {
+namespace wobble::tests {
 
 struct TestFailed;
 struct TestStack;
@@ -305,6 +303,5 @@ struct TestResultStats
     void print_summary(wobble::term::Terminal& out);
 };
 
-} // namespace tests
-} // namespace wobble
+} // namespace wobble::tests
 #endif

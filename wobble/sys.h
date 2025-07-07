@@ -20,8 +20,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-namespace wobble {
-namespace sys {
+namespace wobble::sys {
 
 /**
  * Return the path with suffix appended to its filename.
@@ -636,9 +635,10 @@ protected:
 public:
     Tempdir();
     explicit Tempdir(const std::filesystem::path& prefix);
-    [[deprecated("Use Tempdir(const "
-                 "std::filesystem::path&)")]] explicit Tempdir(
-        const std::string& prefix);
+    [[deprecated(
+        "Use Tempdir(const "
+        "std::filesystem::path&)")]] explicit Tempdir(const std::string&
+                                                          prefix);
     explicit Tempdir(const char* prefix);
     ~Tempdir();
 
@@ -903,7 +903,6 @@ public:
 /// Set a breakpoint at this code location
 void breakpoint();
 
-} // namespace sys
-} // namespace wobble
+} // namespace wobble::sys
 
 #endif
